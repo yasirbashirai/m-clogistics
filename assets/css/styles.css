@@ -945,11 +945,13 @@ html, body{ overflow-x:hidden; }
     url('../img/hero-van.jpg');
   background-size:cover; background-position:center right;
 }
-.hero--bg .hero__photo{ min-height:auto; }     /* it now only holds the floating cards */
-.hero--bg .gcard--track{ top:6%; right:2%; left:auto; }
-.hero--bg .gcard--ontime{ bottom:30%; right:-2%; left:auto; }
-.hero--bg .gcard--rating{ bottom:6%; right:8%; left:auto; }
+/* trust cards: neat vertical stack on the LEFT, under the hero buttons */
+.hero__cards{ display:flex; flex-direction:column; gap:12px; margin-top:30px; max-width:300px; }
+.hero--bg .gcard{ position:relative; inset:auto; top:auto; right:auto; bottom:auto; left:auto;
+  animation:none; width:100%; }
+.hero--bg .gcard--rating .gi, .gi--gold{ background:#fff7e0; color:var(--gold); }
+.hero--bg .gcard--rating .stars{ display:block; color:var(--gold); letter-spacing:1px; font-size:.8rem; line-height:1; margin-bottom:2px; }
 @media (max-width:980px){
   .hero--bg{ background-position:center; }
-  .hero--bg .hero__photo{ display:none; }       /* on stacked layout, show the van via the bg only */
+  .hero__cards{ margin-left:auto; margin-right:auto; }
 }
