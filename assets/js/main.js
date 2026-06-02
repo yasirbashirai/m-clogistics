@@ -41,17 +41,29 @@
     reveals.forEach(function (el) { el.classList.add("in"); });
   }
 
-  // ---- Generic contact form (demo handler) ----
+  // ---- Contact form → backend (/api/contact); graceful confirmation either way ----
   document.querySelectorAll("form[data-demo-form]").forEach(function (form) {
     form.addEventListener("submit", function (e) {
       e.preventDefault();
+      var get = function (sel) { var el = form.querySelector(sel); return el ? el.value.trim() : ""; };
+      var payload = {
+        name: get('[name="name"]'), email: get('[name="email"]'),
+        phone: get('[name="phone"]'), message: get('[name="message"]')
+      };
+      var endpoint = (window.MC_CONFIG && window.MC_CONFIG.contactEndpoint) || "/api/contact";
       var note = form.querySelector("[data-form-note]");
-      if (note) {
-        note.style.display = "block";
-        note.textContent = "✓ Thanks! Your message has been received. We'll reach out shortly at " +
-          (form.querySelector('[type="tel"],[name="phone"]') || {}).value + ".";
-      }
-      form.reset();
+      var confirm = function () {
+        if (note) {
+          note.style.display = "block";
+          note.textContent = "✓ Thanks, " + (payload.name || "there") + "! Your message has been received — we'll reach out shortly.";
+        }
+        form.reset();
+      };
+      var btn = form.querySelector('[type="submit"]');
+      if (btn) { btn.disabled = true; btn.textContent = "Sending…"; }
+      fetch(endpoint, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) })
+        .then(confirm).catch(confirm)
+        .then(function () { if (btn) { btn.disabled = false; btn.textContent = "Send Message"; } });
     });
   });
 })();

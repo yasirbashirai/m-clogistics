@@ -10,49 +10,64 @@
 <link rel="stylesheet" href="assets/css/styles.css">
 <style>
   body{ background:var(--bg-soft); }
-  .adm-top{ background:var(--ink-grad); color:#fff; padding:16px 0; }
+  .adm-top{ background:var(--ink-grad); color:#fff; padding:14px 0; position:sticky; top:0; z-index:50; }
   .adm-top .container{ display:flex; align-items:center; justify-content:space-between; gap:16px; }
   .adm-top .logo__main{ color:#fff; }
-  .adm-wrap{ max-width:1200px; margin:0 auto; padding:28px 24px; }
-  .adm-login{ max-width:420px; margin:80px auto; }
-  .adm-stats{ display:grid; grid-template-columns:repeat(5,1fr); gap:16px; margin-bottom:24px; }
+  .adm-shell{ display:grid; grid-template-columns:220px 1fr; gap:24px; max-width:1280px; margin:0 auto; padding:24px; }
+  .adm-nav{ display:flex; flex-direction:column; gap:4px; position:sticky; top:80px; align-self:start; }
+  .adm-nav button{ text-align:left; background:none; border:0; padding:11px 14px; border-radius:10px; font-weight:700;
+    font-size:.92rem; color:var(--charcoal); display:flex; align-items:center; gap:10px; }
+  .adm-nav button .badge{ margin-left:auto; background:var(--red); color:#fff; font-size:.7rem; padding:1px 7px; border-radius:999px; }
+  .adm-nav button.active{ background:#fff; color:var(--red); box-shadow:var(--shadow-sm); }
+  .adm-main{ min-width:0; }
+  .adm-h{ display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:16px; flex-wrap:wrap; }
+  .adm-h h1{ font-size:1.5rem; }
+  .adm-login{ max-width:420px; margin:70px auto; }
+  .adm-stats{ display:grid; grid-template-columns:repeat(5,1fr); gap:14px; margin-bottom:8px; }
   .adm-stat{ background:#fff; border:1px solid var(--line); border-radius:14px; padding:18px; }
-  .adm-stat b{ font-family:var(--display); font-size:1.8rem; display:block; line-height:1; }
-  .adm-stat span{ font-size:.78rem; color:var(--slate); font-weight:700; text-transform:uppercase; letter-spacing:.04em; }
+  .adm-stat b{ font-family:var(--display); font-size:1.7rem; display:block; line-height:1; }
+  .adm-stat span{ font-size:.74rem; color:var(--slate); font-weight:700; text-transform:uppercase; letter-spacing:.03em; }
   .adm-stat.rev b{ color:var(--red); }
-  .adm-bar{ display:flex; gap:10px; align-items:center; margin-bottom:14px; flex-wrap:wrap; }
-  .adm-bar select, .adm-bar input{ padding:9px 12px; border:1px solid var(--line); border-radius:8px; }
-  .adm-table{ width:100%; background:#fff; border:1px solid var(--line); border-radius:14px; border-collapse:separate; border-spacing:0; overflow:hidden; }
-  .adm-table th{ text-align:left; font-size:.72rem; text-transform:uppercase; letter-spacing:.05em; color:var(--slate); padding:14px 14px; background:var(--bg-soft); border-bottom:1px solid var(--line); }
-  .adm-table td{ padding:14px 14px; border-bottom:1px solid var(--line); font-size:.9rem; vertical-align:top; }
-  .adm-table tr:last-child td{ border-bottom:0; }
-  .adm-code{ font-family:monospace; font-weight:700; }
-  .adm-table select{ padding:6px 8px; border:1px solid var(--line); border-radius:7px; font-weight:600; font-size:.82rem; }
-  .pill-status{ font-size:.72rem; font-weight:800; padding:4px 9px; border-radius:999px; text-transform:capitalize; }
-  .s-pending_payment{ background:#fff3cd; color:#7a5b00; } .s-paid{ background:#e6f9f0; color:#157a43; }
-  .s-assigned{ background:#e7eefc; color:#2b4ea0; } .s-picked_up{ background:#e7eefc; color:#2b4ea0; }
-  .s-in_transit{ background:var(--red-soft); color:var(--red-dark); } .s-delivered{ background:#e6f9f0; color:#157a43; }
-  .s-canceled{ background:#f1f1f1; color:#888; }
-  .adm-empty{ text-align:center; color:var(--slate); padding:60px; background:#fff; border:1px solid var(--line); border-radius:14px; }
-  .muted{ color:var(--slate); font-size:.82rem; }
-  @media (max-width:760px){ .adm-stats{ grid-template-columns:1fr 1fr; } .adm-table{ font-size:.8rem; } }
+  .card2{ background:#fff; border:1px solid var(--line); border-radius:14px; padding:20px; margin-bottom:16px; }
+  .tbl{ width:100%; background:#fff; border:1px solid var(--line); border-radius:14px; border-collapse:separate; border-spacing:0; overflow:hidden; }
+  .tbl th{ text-align:left; font-size:.7rem; text-transform:uppercase; letter-spacing:.04em; color:var(--slate); padding:12px; background:var(--bg-soft); border-bottom:1px solid var(--line); }
+  .tbl td{ padding:12px; border-bottom:1px solid var(--line); font-size:.88rem; vertical-align:top; }
+  .tbl tr:last-child td{ border-bottom:0; }
+  .code{ font-family:monospace; font-weight:700; }
+  .muted{ color:var(--slate); font-size:.8rem; }
+  .tbl select, .mini-sel{ padding:6px 8px; border:1px solid var(--line); border-radius:7px; font-weight:600; font-size:.8rem; }
+  .pill-status{ font-size:.7rem; font-weight:800; padding:3px 9px; border-radius:999px; text-transform:capitalize; white-space:nowrap; }
+  .s-pending_payment,.s-new{ background:#fff3cd; color:#7a5b00; } .s-paid,.s-delivered,.s-handled,.s-quoted{ background:#e6f9f0; color:#157a43; }
+  .s-assigned,.s-picked_up{ background:#e7eefc; color:#2b4ea0; } .s-in_transit{ background:var(--red-soft); color:var(--red-dark); }
+  .s-canceled,.s-closed{ background:#f1f1f1; color:#888; }
+  .empty{ text-align:center; color:var(--slate); padding:50px; background:#fff; border:1px solid var(--line); border-radius:14px; }
+  .grid2{ display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+  .grid3{ display:grid; grid-template-columns:repeat(3,1fr); gap:14px; }
+  .price-tier{ display:flex; align-items:center; gap:8px; margin-bottom:8px; }
+  .price-tier label{ width:90px; font-weight:700; font-size:.85rem; }
+  .ok-toast{ position:fixed; bottom:20px; left:50%; transform:translateX(-50%); background:var(--ink); color:#fff; padding:12px 20px; border-radius:10px; font-weight:600; box-shadow:var(--shadow-lg); display:none; z-index:99; }
+  .linkbtn{ background:none;border:0;color:var(--red);font-weight:700;font-size:.8rem;cursor:pointer; }
+  @media (max-width:880px){ .adm-shell{ grid-template-columns:1fr; } .adm-nav{ position:static; flex-direction:row; flex-wrap:wrap; } .adm-stats{ grid-template-columns:1fr 1fr; } .grid2,.grid3{ grid-template-columns:1fr; } }
 </style>
 </head>
 <body>
 
 <div class="adm-top">
   <div class="container">
-    <span class="logo"><span class="logo__mark" style="width:36px;height:36px;flex:0 0 36px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h10v9H3z"/><path d="M13 9h4.5l3.5 3.5V15h-8z"/><circle cx="7" cy="17.5" r="1.8"/><circle cx="16.5" cy="17.5" r="1.8"/></svg></span><span class="logo__txt"><span class="logo__main" style="font-size:1.2rem">Dispatch Admin</span></span></span>
-    <button class="btn btn--ghost" id="logoutBtn" style="display:none;border-color:rgba(255,255,255,.4)">Log out</button>
+    <span class="logo"><span class="logo__mark" style="width:34px;height:34px;flex:0 0 34px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h10v9H3z"/><path d="M13 9h4.5l3.5 3.5V15h-8z"/><circle cx="7" cy="17.5" r="1.8"/><circle cx="16.5" cy="17.5" r="1.8"/></svg></span><span class="logo__txt"><span class="logo__main" style="font-size:1.15rem">Dispatch Admin</span></span></span>
+    <div style="display:flex;gap:10px;align-items:center">
+      <a class="btn btn--ghost" href="index.html" target="_blank" style="border-color:rgba(255,255,255,.35);padding:8px 14px">View site ↗</a>
+      <button class="btn btn--ghost" id="logoutBtn" style="display:none;border-color:rgba(255,255,255,.35);padding:8px 14px">Log out</button>
+    </div>
   </div>
 </div>
 
 <!-- LOGIN -->
-<div class="adm-wrap adm-login" id="loginView">
-  <div class="form-card">
-    <h2 class="section-title" style="font-size:1.5rem">Dispatch sign-in</h2>
-    <p class="muted" style="margin-bottom:18px">Enter the backend URL and your admin token.</p>
-    <div class="field"><label>Backend API base URL <span class="muted">(leave blank if admin is on the same site)</span></label><input id="apiBase" type="text" placeholder="(same site) — or https://your-backend.com"></div>
+<div class="adm-login" id="loginView">
+  <div class="card2">
+    <h2 class="section-title" style="font-size:1.4rem">Dispatch sign-in</h2>
+    <p class="muted" style="margin-bottom:16px">Enter your admin token.</p>
+    <div class="field"><label>Backend API base URL <span class="muted">(blank if same site)</span></label><input id="apiBase" type="text" placeholder="(same site) — or http://localhost:4242"></div>
     <div class="field"><label>Admin token</label><input id="adminToken" type="password" placeholder="ADMIN_TOKEN"></div>
     <button class="btn btn--primary btn--block" id="loginBtn">Sign in</button>
     <p class="muted" id="loginErr" style="color:var(--red);margin-top:12px;display:none"></p>
@@ -60,113 +75,231 @@
 </div>
 
 <!-- DASHBOARD -->
-<div class="adm-wrap" id="dashView" style="display:none">
-  <div class="adm-stats" id="statsRow"></div>
-  <div class="adm-bar">
-    <strong>Orders</strong>
-    <select id="filterStatus"><option value="">All statuses</option></select>
-    <input id="search" type="text" placeholder="Search code, name, address…" style="flex:1;min-width:180px">
-    <button class="btn btn--outline" id="refreshBtn">↻ Refresh</button>
-  </div>
-  <div id="tableWrap"></div>
+<div class="adm-shell" id="dashView" style="display:none">
+  <nav class="adm-nav" id="nav">
+    <button data-tab="overview" class="active">📊 Overview</button>
+    <button data-tab="shipments">📦 Shipments</button>
+    <button data-tab="quotes">📝 Quote Requests <span class="badge" id="bdgQuotes" style="display:none"></span></button>
+    <button data-tab="submissions">✉️ Submissions <span class="badge" id="bdgSubs" style="display:none"></span></button>
+    <button data-tab="pricing">💲 Services &amp; Pricing</button>
+    <button data-tab="settings">⚙️ Settings</button>
+  </nav>
+  <main class="adm-main" id="main"></main>
 </div>
+
+<div class="ok-toast" id="toast"></div>
 
 <script>
 (function(){
   "use strict";
-  var LS="mcAdmin";
+  var LS="mcAdmin2";
   var cfg = JSON.parse(localStorage.getItem(LS) || "{}");
-  var $ = function(id){ return document.getElementById(id); };
-  var orders=[], statuses=[];
+  var $=function(id){return document.getElementById(id);};
+  var state={};
 
-  function authHeaders(){ return { "x-admin-token": cfg.token, "Content-Type":"application/json" }; }
-  function api(path){ return (cfg.apiBase||"").replace(/\/$/,"") + path; }
+  function api(p){ return (cfg.apiBase||"").replace(/\/$/,"") + p; }
+  function H(){ return { "x-admin-token":cfg.token, "Content-Type":"application/json" }; }
+  function esc(s){ return (s==null?"":String(s)).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c];}); }
+  function money(n){ return n==null?"—":"$"+Number(n).toFixed(2); }
+  function toast(m){ var t=$("toast"); t.textContent=m; t.style.display="block"; setTimeout(function(){t.style.display="none";},2200); }
 
-  function showLogin(msg){
-    $("loginView").style.display=""; $("dashView").style.display="none"; $("logoutBtn").style.display="none";
-    if(msg){ $("loginErr").style.display="block"; $("loginErr").textContent=msg; }
-  }
+  function showLogin(msg){ $("loginView").style.display=""; $("dashView").style.display="none"; $("logoutBtn").style.display="none";
+    if(msg){ $("loginErr").style.display="block"; $("loginErr").textContent=msg; } }
   function showDash(){ $("loginView").style.display="none"; $("dashView").style.display=""; $("logoutBtn").style.display=""; }
 
-  $("loginBtn").addEventListener("click", function(){
-    cfg = { apiBase: $("apiBase").value.trim(), token: $("adminToken").value.trim() };
+  function get(p){ return fetch(api(p),{headers:H()}).then(function(r){ if(r.status===401) throw new Error("Invalid token."); if(!r.ok) throw new Error("Error "+r.status); return r.json(); }); }
+  function send(method,p,body){ return fetch(api(p),{method:method,headers:H(),body:body?JSON.stringify(body):undefined}).then(function(r){return r.json();}); }
+
+  $("loginBtn").addEventListener("click",function(){
+    cfg={ apiBase:$("apiBase").value.trim(), token:$("adminToken").value.trim() };
     if(!cfg.token){ showLogin("Enter your admin token."); return; }
-    localStorage.setItem(LS, JSON.stringify(cfg));
-    load();
+    localStorage.setItem(LS,JSON.stringify(cfg));
+    boot();
   });
-  $("logoutBtn").addEventListener("click", function(){ localStorage.removeItem(LS); cfg={}; showLogin(); });
-  $("refreshBtn").addEventListener("click", load);
-  $("filterStatus").addEventListener("change", render);
-  $("search").addEventListener("input", render);
+  $("logoutBtn").addEventListener("click",function(){ localStorage.removeItem(LS); cfg={}; showLogin(); });
+  $("nav").addEventListener("click",function(e){ var b=e.target.closest("button[data-tab]"); if(!b) return;
+    $("nav").querySelectorAll("button").forEach(function(x){x.classList.toggle("active",x===b);}); openTab(b.getAttribute("data-tab")); });
 
-  function money(n){ return n==null ? "—" : "$"+Number(n).toFixed(2); }
-
-  function load(){
-    fetch(api("/api/admin/orders"), { headers: authHeaders() })
-      .then(function(r){ if(!r.ok) throw new Error(r.status===401?"Invalid token.":"Error "+r.status); return r.json(); })
-      .then(function(d){ orders=d.orders||[]; statuses=d.statuses||[]; buildFilter(); showDash(); render(); })
-      .catch(function(e){ showLogin(e.message + " — check the URL/token. (Backend must be deployed & CORS-allow this page.)"); });
+  function boot(){
+    get("/api/admin/overview").then(function(d){
+      state.overview=d; showDash();
+      if(d.counts.quotes){ $("bdgQuotes").style.display=""; $("bdgQuotes").textContent=d.counts.quotes; }
+      if(d.counts.submissions){ $("bdgSubs").style.display=""; $("bdgSubs").textContent=d.counts.submissions; }
+      var tab=(location.hash||"").slice(1), btn=$("nav").querySelector('[data-tab="'+tab+'"]');
+      if(btn){ $("nav").querySelectorAll("button").forEach(function(x){x.classList.toggle("active",x===btn);}); openTab(tab); }
+      else openTab("overview");
+    }).catch(function(e){ showLogin(e.message+" — check URL/token. (Backend must be running.)"); });
   }
 
-  function buildFilter(){
-    var sel=$("filterStatus");
-    sel.innerHTML='<option value="">All statuses</option>'+statuses.map(function(s){return "<option>"+s+"</option>";}).join("");
+  function openTab(t){
+    var m=$("main");
+    if(t==="overview") return renderOverview(m);
+    if(t==="shipments") return get("/api/admin/orders").then(function(d){ state.orders=d; renderShipments(m); });
+    if(t==="quotes") return get("/api/admin/quotes").then(function(d){ state.quotes=d.quotes; renderQuotes(m); });
+    if(t==="submissions") return get("/api/admin/submissions").then(function(d){ state.subs=d.submissions; renderSubs(m); });
+    if(t==="pricing") return get("/api/admin/pricing").then(function(d){ state.pricing=d.pricing; renderPricing(m); });
+    if(t==="settings") return get("/api/admin/settings").then(function(d){ state.settings=d.settings; renderSettings(m); });
   }
 
-  function stats(){
-    var paid=orders.filter(function(o){return o.paid;});
-    var rev=paid.reduce(function(s,o){return s+(o.amountPaid||o.total||0);},0);
-    var data=[
-      ["Total orders", orders.length, ""],
-      ["Paid", paid.length, ""],
-      ["In transit", orders.filter(function(o){return o.status==="in_transit"||o.status==="picked_up"||o.status==="assigned";}).length, ""],
-      ["Delivered", orders.filter(function(o){return o.status==="delivered";}).length, ""],
-      ["Revenue", "$"+rev.toFixed(2), "rev"]
-    ];
-    $("statsRow").innerHTML=data.map(function(d){return "<div class='adm-stat "+d[2]+"'><b>"+d[1]+"</b><span>"+d[0]+"</span></div>";}).join("");
+  /* ---------- OVERVIEW ---------- */
+  function renderOverview(m){
+    var c=state.overview.counts, rev=state.overview.revenue;
+    m.innerHTML='<div class="adm-h"><h1>Overview</h1></div>'+
+      '<div class="adm-stats">'+
+      stat("Total orders",c.orders)+stat("Paid",c.paid)+stat("In transit",c.inTransit)+stat("Delivered",c.delivered)+stat("Revenue","$"+rev.toFixed(2),"rev")+
+      '</div>'+
+      '<div class="grid2" style="margin-top:16px">'+
+        '<div class="card2"><b>📝 '+c.quotes+' new quote request(s)</b><p class="muted" style="margin-top:6px">Custom-quote submissions awaiting a price.</p><button class="btn btn--outline" data-go="quotes" style="margin-top:10px">Review quotes</button></div>'+
+        '<div class="card2"><b>✉️ '+c.submissions+' new message(s)</b><p class="muted" style="margin-top:6px">Contact-form submissions from the website.</p><button class="btn btn--outline" data-go="submissions" style="margin-top:10px">View submissions</button></div>'+
+      '</div>';
+    m.querySelectorAll("[data-go]").forEach(function(b){ b.addEventListener("click",function(){ $("nav").querySelector('[data-tab="'+b.dataset.go+'"]').click(); }); });
   }
+  function stat(label,val,cls){ return '<div class="adm-stat '+(cls||"")+'"><b>'+val+'</b><span>'+label+'</span></div>'; }
 
-  function render(){
-    stats();
-    var f=$("filterStatus").value, q=$("search").value.toLowerCase();
-    var rows=orders.filter(function(o){
-      if(f && o.status!==f) return false;
-      if(q){ var hay=(o.id+" "+(o.customer&&o.customer.name)+" "+o.pickupAddress+" "+(o.deliveryAddress||"")+" "+(o.serviceType||"")).toLowerCase(); if(hay.indexOf(q)<0) return false; }
-      return true;
+  /* ---------- SHIPMENTS ---------- */
+  function renderShipments(m){
+    var st=state.orders.statuses, rows=state.orders.orders;
+    m.innerHTML='<div class="adm-h"><h1>Shipments</h1><button class="btn btn--primary" id="addBtn">+ Add shipment</button></div>'+
+      '<div id="addForm" style="display:none"></div>'+
+      (rows.length? '<table class="tbl"><thead><tr><th>Code</th><th>Customer</th><th>Service</th><th>Route</th><th>Total</th><th>Status</th><th></th></tr></thead><tbody>'+
+        rows.map(function(o){ var cu=o.customer||{};
+          var route=o.serviceType==="Route Delivery"?((o.numberOfStops||(o.stops||[]).length)+" stops"):(esc(o.pickupAddress)+" → "+esc(o.deliveryAddress||"—"));
+          return '<tr><td><span class="code">'+o.id+'</span><div class="muted">'+(o.createdAt||"").slice(0,10)+' · '+(o.source||"online")+'</div></td>'+
+            '<td>'+esc(cu.name)+'<div class="muted">'+esc(cu.phone)+'<br>'+esc(cu.email)+'</div></td>'+
+            '<td>'+esc(o.serviceType)+'<div class="muted">'+(o.weight||0)+' lb '+(o.date?"· "+o.date:"")+'</div></td>'+
+            '<td class="muted">'+route+'</td>'+
+            '<td><b>'+money(o.amountPaid||o.total)+'</b><div class="muted">'+(o.paid?"paid":"unpaid")+'</div></td>'+
+            '<td><span class="pill-status s-'+o.status+'">'+(o.status||"").replace(/_/g," ")+'</span><br><select class="mini-sel" data-st="'+o.id+'" style="margin-top:6px">'+st.map(function(s){return '<option '+(s===o.status?"selected":"")+'>'+s+'</option>';}).join("")+'</select></td>'+
+            '<td><button class="linkbtn" data-del="'+o.id+'">delete</button></td></tr>';
+        }).join("")+'</tbody></table>'
+        : '<div class="empty">No shipments yet. Click <b>+ Add shipment</b> or wait for online bookings.</div>');
+    $("addBtn").addEventListener("click",toggleAddForm);
+    m.querySelectorAll("[data-st]").forEach(function(s){ s.addEventListener("change",function(){ send("PATCH","/api/admin/orders/"+s.dataset.st,{status:s.value}).then(function(){ toast("Status updated"); }); }); });
+    m.querySelectorAll("[data-del]").forEach(function(b){ b.addEventListener("click",function(){ if(!confirm("Delete "+b.dataset.del+"?"))return; send("DELETE","/api/admin/orders/"+b.dataset.del).then(function(){ openTab("shipments"); }); }); });
+  }
+  function toggleAddForm(){
+    var f=$("addForm"); if(f.style.display!=="none"){ f.style.display="none"; return; }
+    f.style.display=""; f.innerHTML='<div class="card2"><h3 style="margin-bottom:12px">New shipment</h3>'+
+      '<div class="grid3"><div class="field"><label>Service</label><select id="f_svc"><option>Single Delivery</option><option>Route Delivery</option></select></div>'+
+      '<div class="field"><label>Customer name</label><input id="f_name"></div><div class="field"><label>Phone</label><input id="f_phone"></div></div>'+
+      '<div class="grid2"><div class="field"><label>Email</label><input id="f_email"></div><div class="field"><label>Pickup address</label><input id="f_pickup"></div></div>'+
+      '<div class="field" id="f_singleWrap"><label>Delivery address</label><input id="f_delivery"></div>'+
+      '<div class="field" id="f_routeWrap" style="display:none"><label>Stops (one address per line)</label><textarea id="f_stops" style="min-height:80px"></textarea></div>'+
+      '<div class="grid3"><div class="field"><label>Distance / farthest (mi)</label><input id="f_miles" type="number" value="10"></div>'+
+      '<div class="field"><label>Weight (lb)</label><input id="f_weight" type="number" value="10"></div>'+
+      '<div class="field"><label>Status</label><select id="f_status">'+state.orders.statuses.map(function(s){return '<option>'+s+'</option>';}).join("")+'</select></div></div>'+
+      '<div class="grid3"><div class="field"><label>Date</label><input id="f_date" type="date"></div><div class="field"><label>Time</label><input id="f_time" type="time"></div>'+
+      '<div class="field"><label>Mark paid?</label><select id="f_paid"><option value="false">No</option><option value="true">Yes</option></select></div></div>'+
+      '<div class="field"><label>Instructions</label><input id="f_notes"></div>'+
+      '<div class="chk-row"><label class="chk"><input type="checkbox" id="f_rush"> Rush</label><label class="chk"><input type="checkbox" id="f_weekend"> Weekend</label><label class="chk"><input type="checkbox" id="f_overnight"> Overnight</label></div>'+
+      '<button class="btn btn--primary" id="f_save" style="margin-top:12px">Create shipment</button></div>';
+    $("f_svc").addEventListener("change",function(){ var r=this.value==="Route Delivery"; $("f_routeWrap").style.display=r?"":"none"; $("f_singleWrap").style.display=r?"none":""; });
+    $("f_save").addEventListener("click",function(){
+      var svc=$("f_svc").value, stops=$("f_stops").value.split("\n").map(function(s){return s.trim();}).filter(Boolean);
+      var body={ serviceType:svc, name:$("f_name").value, phone:$("f_phone").value, email:$("f_email").value,
+        pickupAddress:$("f_pickup").value, deliveryAddress:svc==="Single Delivery"?$("f_delivery").value:null,
+        stops:svc==="Route Delivery"?stops:null, numberOfStops:svc==="Route Delivery"?stops.length:null,
+        miles:Number($("f_miles").value)||0, weight:Number($("f_weight").value)||0, date:$("f_date").value, time:$("f_time").value,
+        instructions:$("f_notes").value, paid:$("f_paid").value==="true", status:$("f_status").value,
+        addons:{ rush:$("f_rush").checked, weekend:$("f_weekend").checked, overnight:$("f_overnight").checked } };
+      if(!body.name||!body.pickupAddress){ toast("Name + pickup required"); return; }
+      send("POST","/api/admin/orders",body).then(function(){ toast("Shipment created"); openTab("shipments"); });
     });
-    if(!rows.length){ $("tableWrap").innerHTML="<div class='adm-empty'>No orders yet. Paid bookings will appear here automatically.</div>"; return; }
-    var html="<table class='adm-table'><thead><tr><th>Code</th><th>Customer</th><th>Service</th><th>Route</th><th>Total</th><th>Status</th></tr></thead><tbody>";
-    rows.forEach(function(o){
-      var c=o.customer||{};
-      var route = o.serviceType==="Route Delivery"
-        ? (o.numberOfStops||(o.stops||[]).length)+" stops from "+(o.pickupAddress||"—")
-        : (o.pickupAddress||"—")+" → "+(o.deliveryAddress||"—");
-      html+="<tr>"
-        +"<td><span class='adm-code'>"+o.id+"</span><div class='muted'>"+(o.createdAt||"").slice(0,16).replace("T"," ")+"</div></td>"
-        +"<td>"+(c.name||"—")+"<div class='muted'>"+(c.phone||"")+"<br>"+(c.email||"")+"</div></td>"
-        +"<td>"+(o.serviceType||"—")+"<div class='muted'>"+(o.weight||0)+" lb"+(o.date?" · "+o.date:"")+(o.time?" "+o.time:"")+"</div></td>"
-        +"<td class='muted'>"+route+(o.instructions?"<br><em>"+o.instructions+"</em>":"")+"</td>"
-        +"<td><b>"+money(o.amountPaid||o.total)+"</b><div class='muted'>"+(o.paid?"paid":"unpaid")+"</div></td>"
-        +"<td><span class='pill-status s-"+o.status+"'>"+(o.status||"").replace(/_/g," ")+"</span><br>"
-          +"<select data-id='"+o.id+"' style='margin-top:6px'>"+statuses.map(function(s){return "<option "+(s===o.status?"selected":"")+">"+s+"</option>";}).join("")+"</select></td>"
-        +"</tr>";
-    });
-    html+="</tbody></table>";
-    $("tableWrap").innerHTML=html;
-    $("tableWrap").querySelectorAll("select[data-id]").forEach(function(sel){
-      sel.addEventListener("change", function(){ updateStatus(sel.getAttribute("data-id"), sel.value); });
+  }
+
+  /* ---------- QUOTES ---------- */
+  function renderQuotes(m){
+    var rows=state.quotes;
+    m.innerHTML='<div class="adm-h"><h1>Quote Requests</h1></div>'+
+      (rows.length? '<table class="tbl"><thead><tr><th>Ref</th><th>Customer</th><th>Details</th><th>Status</th></tr></thead><tbody>'+
+        rows.map(function(q){ var c=q.customer||{};
+          return '<tr><td><span class="code">'+q.id+'</span><div class="muted">'+(q.createdAt||"").slice(0,10)+'</div></td>'+
+          '<td>'+esc(c.name)+'<div class="muted">'+esc(c.phone)+'<br>'+esc(c.email)+'</div></td>'+
+          '<td class="muted">'+esc(q.serviceType||"")+' · '+(q.weight||"?")+' lb<br>'+esc(q.pickupAddress||"")+' → '+esc(q.deliveryAddress||(q.stops||[]).join(", "))+(q.instructions?'<br><em>'+esc(q.instructions)+'</em>':"")+'</td>'+
+          '<td><select class="mini-sel" data-q="'+q.id+'"><option '+(q.status==="new"?"selected":"")+'>new</option><option '+(q.status==="quoted"?"selected":"")+'>quoted</option><option '+(q.status==="closed"?"selected":"")+'>closed</option></select></td></tr>';
+        }).join("")+'</tbody></table>' : '<div class="empty">No quote requests yet.</div>');
+    m.querySelectorAll("[data-q]").forEach(function(s){ s.addEventListener("change",function(){ send("PATCH","/api/admin/quotes/"+s.dataset.q,{status:s.value}).then(function(){toast("Updated");}); }); });
+  }
+
+  /* ---------- SUBMISSIONS ---------- */
+  function renderSubs(m){
+    var rows=state.subs;
+    m.innerHTML='<div class="adm-h"><h1>Form Submissions</h1></div>'+
+      (rows.length? '<table class="tbl"><thead><tr><th>Ref</th><th>From</th><th>Message</th><th>Status</th></tr></thead><tbody>'+
+        rows.map(function(s){ return '<tr><td><span class="code">'+s.id+'</span><div class="muted">'+(s.createdAt||"").slice(0,10)+'</div></td>'+
+          '<td>'+esc(s.name)+'<div class="muted">'+esc(s.phone)+'<br>'+esc(s.email)+'</div></td>'+
+          '<td class="muted">'+esc(s.message)+'</td>'+
+          '<td><select class="mini-sel" data-s="'+s.id+'"><option '+(s.status==="new"?"selected":"")+'>new</option><option '+(s.status==="handled"?"selected":"")+'>handled</option><option '+(s.status==="closed"?"selected":"")+'>closed</option></select></td></tr>';
+        }).join("")+'</tbody></table>' : '<div class="empty">No submissions yet. The Contact form posts here.</div>');
+    m.querySelectorAll("[data-s]").forEach(function(sel){ sel.addEventListener("change",function(){ send("PATCH","/api/admin/submissions/"+sel.dataset.s,{status:sel.value}).then(function(){toast("Updated");}); }); });
+  }
+
+  /* ---------- PRICING ---------- */
+  function renderPricing(m){
+    var p=state.pricing;
+    m.innerHTML='<div class="adm-h"><h1>Services &amp; Pricing</h1></div>'+
+      '<div class="card2"><h3>Single Delivery — distance tiers</h3><div id="tiers" style="margin-top:12px"></div></div>'+
+      '<div class="card2"><h3>Route Delivery</h3><div class="grid2" style="margin-top:12px">'+
+        fld("Base fee ($)","p_base",p.route.base)+fld("Per stop ($)","p_perstop",p.route.perStop)+'</div></div>'+
+      '<div class="card2"><h3>Mileage &amp; limits</h3><div class="grid3" style="margin-top:12px">'+
+        fld("Overage starts after (mi)","p_overstart",p.overageStartMiles)+fld("Per extra mile ($)","p_permile",p.overagePerMile)+fld("Max weight for instant (lb)","p_maxw",p.maxWeight)+'</div></div>'+
+      '<div class="card2"><h3>Add-on fees</h3><div class="grid3" style="margin-top:12px">'+
+        fld("Rush ($)","p_rush",p.addons.rush)+fld("Weekend ($)","p_weekend",p.addons.weekend)+fld("Overnight ($)","p_overnight",p.addons.overnight)+'</div></div>'+
+      '<button class="btn btn--primary" id="savePricing">Save pricing</button>';
+    var t=$("tiers");
+    t.innerHTML=p.singleTiers.map(function(tier,i){ return '<div class="price-tier"><label>≤ '+tier.max+' mi</label><input type="number" step="0.01" data-tier="'+i+'" value="'+tier.price+'" style="max-width:140px"></div>'; }).join("");
+    $("savePricing").addEventListener("click",function(){
+      var tiers=p.singleTiers.map(function(tier,i){ return { max:tier.max, price:Number(t.querySelector('[data-tier="'+i+'"]').value)||0 }; });
+      var body={ singleTiers:tiers, route:{ base:num("p_base"), perStop:num("p_perstop") },
+        overageStartMiles:num("p_overstart"), overagePerMile:num("p_permile"), maxWeight:num("p_maxw"),
+        addons:{ rush:num("p_rush"), weekend:num("p_weekend"), overnight:num("p_overnight") } };
+      send("PUT","/api/admin/pricing",body).then(function(d){ state.pricing=d.pricing; toast("Pricing saved — live on the site"); });
     });
   }
 
-  function updateStatus(id, status){
-    fetch(api("/api/admin/orders/"+id), { method:"PATCH", headers:authHeaders(), body:JSON.stringify({status:status}) })
-      .then(function(r){ return r.json(); })
-      .then(function(d){ if(d.order){ var i=orders.findIndex(function(o){return o.id===id;}); if(i>=0) orders[i]=d.order; render(); } })
-      .catch(function(){ alert("Could not update status."); });
+  /* ---------- SETTINGS ---------- */
+  function renderSettings(m){
+    var s=state.settings, pay=s.payments||{}, intg=s.integrations||{}, biz=s.business||{};
+    m.innerHTML='<div class="adm-h"><h1>Settings</h1></div>'+
+      '<div class="card2"><h3>💳 Payment gateway</h3>'+
+        '<div class="grid2" style="margin-top:12px">'+
+        '<div class="field"><label>Provider</label><select id="s_provider"><option value="stripe" '+(pay.provider==="stripe"?"selected":"")+'>Stripe</option></select></div>'+
+        '<div class="field"><label>Mode</label><select id="s_mode"><option value="test" '+(pay.mode==="test"?"selected":"")+'>Test</option><option value="live" '+(pay.mode==="live"?"selected":"")+'>Live</option></select></div>'+
+        '</div>'+
+        '<div class="field"><label>Stripe publishable key (pk_…)</label><input id="s_pub" value="'+esc(pay.stripePublishableKey||"")+'" placeholder="pk_live_…"></div>'+
+        '<div class="field"><label>Stripe secret key (sk_…) '+(pay.stripeSecretKeySet?'<span class="muted">— set ✓ (leave blank to keep)</span>':'')+'</label><input id="s_secret" type="password" placeholder="'+(pay.stripeSecretKeySet?"•••••• stored":"sk_live_…")+'"></div>'+
+        (pay.envSecret?'<p class="muted">A secret key is also set via the host env var (recommended, takes priority).</p>':'')+
+        '<p class="muted">Webhook endpoint: <span class="code">/api/webhook</span> — add this in your Stripe dashboard (event checkout.session.completed).</p>'+
+      '</div>'+
+      '<div class="card2"><h3>🔌 Integrations</h3><div class="grid2" style="margin-top:12px">'+
+        '<div class="field"><label>Shipday API key</label><input id="s_shipday" type="password" placeholder="'+(intg.shipdaySet?"•••••• stored":"Basic …")+'"></div>'+
+        '<div class="field"><label>Google Maps API key</label><input id="s_gmaps" type="password" placeholder="'+(intg.gmapsSet?"•••••• stored":"AIza…")+'"></div>'+
+        '</div>'+
+        '<div class="grid3" style="margin-top:6px">'+fld("SMTP host","s_smtphost",biz.smtpHost||"")+fld("SMTP user","s_smtpuser",intg.smtpUser||"")+'<div class="field"><label>SMTP pass</label><input id="s_smtppass" type="password" placeholder="••••"></div></div>'+
+      '</div>'+
+      '<div class="card2"><h3>🏢 Business info</h3><div class="grid2" style="margin-top:12px">'+
+        fld("Business name","b_name",biz.name)+fld("Phone 1","b_p1",biz.phone1)+fld("Phone 2","b_p2",biz.phone2)+fld("Email","b_email",biz.email)+fld("Address","b_addr",biz.address)+fld("Hours","b_hours",biz.hours)+'</div>'+
+        '<div class="field" style="margin-top:6px"><label>Dispatch notification emails (comma separated)</label><input id="b_dispatch" value="'+esc((s.dispatchEmails||[]).join(", "))+'"></div>'+
+      '</div>'+
+      '<button class="btn btn--primary" id="saveSettings">Save settings</button>';
+    $("saveSettings").addEventListener("click",function(){
+      var body={ payments:{ provider:$("s_provider").value, mode:$("s_mode").value, stripePublishableKey:$("s_pub").value },
+        integrations:{}, business:{ name:val("b_name"),phone1:val("b_p1"),phone2:val("b_p2"),email:val("b_email"),address:val("b_addr"),hours:val("b_hours") },
+        dispatchEmails:val("b_dispatch").split(",").map(function(x){return x.trim();}).filter(Boolean) };
+      if(val("s_secret")) body.payments.stripeSecretKey=val("s_secret");
+      if(val("s_shipday")) body.integrations.shipdayKey=val("s_shipday");
+      if(val("s_gmaps")) body.integrations.gmapsKey=val("s_gmaps");
+      if(val("s_smtphost")) body.business.smtpHost=val("s_smtphost");
+      send("PUT","/api/admin/settings",body).then(function(d){ state.settings=d.settings; toast("Settings saved"); });
+    });
   }
 
-  // auto-login if creds saved
-  if(cfg.token){ $("apiBase").value=cfg.apiBase||""; load(); } else { showLogin(); }
+  function fld(label,id,v){ return '<div class="field"><label>'+label+'</label><input id="'+id+'" value="'+esc(v==null?"":v)+'"></div>'; }
+  function num(id){ return Number($(id).value)||0; }
+  function val(id){ var e=$(id); return e?e.value.trim():""; }
+
+  // init
+  if(cfg.token){ $("apiBase").value=cfg.apiBase||""; boot(); } else { showLogin(); }
 })();
 </script>
 </body>

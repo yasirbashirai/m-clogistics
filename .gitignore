@@ -22,3 +22,5 @@ server/node_modules/
 server/orders.json
 /node_modules/
 .vercel
+server/data.json
+_seed-admin.html
