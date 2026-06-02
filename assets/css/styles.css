@@ -937,3 +937,19 @@ html, body{ overflow-x:hidden; }
 .hero .gcard--ontime{ bottom:8%; right:-5%; }
 .hero .gcard--rating{ bottom:-5%; left:2%; }
 @media (max-width:980px){ .hero__frame{ max-width:480px; margin:0 auto; } }
+
+/* v10 — homepage hero uses the branded van as a full background */
+.hero--bg{
+  background-image:
+    linear-gradient(100deg, rgba(9,10,12,.95) 0%, rgba(9,10,12,.86) 42%, rgba(9,10,12,.55) 72%, rgba(9,10,12,.4) 100%),
+    url('../img/hero-van.jpg');
+  background-size:cover; background-position:center right;
+}
+.hero--bg .hero__photo{ min-height:auto; }     /* it now only holds the floating cards */
+.hero--bg .gcard--track{ top:6%; right:2%; left:auto; }
+.hero--bg .gcard--ontime{ bottom:30%; right:-2%; left:auto; }
+.hero--bg .gcard--rating{ bottom:6%; right:8%; left:auto; }
+@media (max-width:980px){
+  .hero--bg{ background-position:center; }
+  .hero--bg .hero__photo{ display:none; }       /* on stacked layout, show the van via the bg only */
+}
