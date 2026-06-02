@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dispatch Admin — M&amp;C Logistics</title>
+<meta name="robots" content="noindex,nofollow">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' rx='6' fill='%23E11D2A'/%3E%3Cg fill='none' stroke='white' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 7h9v8H3z'/%3E%3Cpath d='M12 9h4l3 3v3h-7z'/%3E%3Ccircle cx='6.5' cy='17' r='1.4'/%3E%3Ccircle cx='15.5' cy='17' r='1.4'/%3E%3C/g%3E%3C/svg%3E">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Sora:wght@600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/styles.css">
+<style>
+  body{ background:var(--bg-soft); }
+  .adm-top{ background:var(--ink-grad); color:#fff; padding:16px 0; }
+  .adm-top .container{ display:flex; align-items:center; justify-content:space-between; gap:16px; }
+  .adm-top .logo__main{ color:#fff; }
+  .adm-wrap{ max-width:1200px; margin:0 auto; padding:28px 24px; }
+  .adm-login{ max-width:420px; margin:80px auto; }
+  .adm-stats{ display:grid; grid-template-columns:repeat(5,1fr); gap:16px; margin-bottom:24px; }
+  .adm-stat{ background:#fff; border:1px solid var(--line); border-radius:14px; padding:18px; }
+  .adm-stat b{ font-family:var(--display); font-size:1.8rem; display:block; line-height:1; }
+  .adm-stat span{ font-size:.78rem; color:var(--slate); font-weight:700; text-transform:uppercase; letter-spacing:.04em; }
+  .adm-stat.rev b{ color:var(--red); }
+  .adm-bar{ display:flex; gap:10px; align-items:center; margin-bottom:14px; flex-wrap:wrap; }
+  .adm-bar select, .adm-bar input{ padding:9px 12px; border:1px solid var(--line); border-radius:8px; }
+  .adm-table{ width:100%; background:#fff; border:1px solid var(--line); border-radius:14px; border-collapse:separate; border-spacing:0; overflow:hidden; }
+  .adm-table th{ text-align:left; font-size:.72rem; text-transform:uppercase; letter-spacing:.05em; color:var(--slate); padding:14px 14px; background:var(--bg-soft); border-bottom:1px solid var(--line); }
+  .adm-table td{ padding:14px 14px; border-bottom:1px solid var(--line); font-size:.9rem; vertical-align:top; }
+  .adm-table tr:last-child td{ border-bottom:0; }
+  .adm-code{ font-family:monospace; font-weight:700; }
+  .adm-table select{ padding:6px 8px; border:1px solid var(--line); border-radius:7px; font-weight:600; font-size:.82rem; }
+  .pill-status{ font-size:.72rem; font-weight:800; padding:4px 9px; border-radius:999px; text-transform:capitalize; }
+  .s-pending_payment{ background:#fff3cd; color:#7a5b00; } .s-paid{ background:#e6f9f0; color:#157a43; }
+  .s-assigned{ background:#e7eefc; color:#2b4ea0; } .s-picked_up{ background:#e7eefc; color:#2b4ea0; }
+  .s-in_transit{ background:var(--red-soft); color:var(--red-dark); } .s-delivered{ background:#e6f9f0; color:#157a43; }
+  .s-canceled{ background:#f1f1f1; color:#888; }
+  .adm-empty{ text-align:center; color:var(--slate); padding:60px; background:#fff; border:1px solid var(--line); border-radius:14px; }
+  .muted{ color:var(--slate); font-size:.82rem; }
+  @media (max-width:760px){ .adm-stats{ grid-template-columns:1fr 1fr; } .adm-table{ font-size:.8rem; } }
+</style>
+</head>
+<body>
+
+<div class="adm-top">
+  <div class="container">
+    <span class="logo"><span class="logo__mark" style="width:36px;height:36px;flex:0 0 36px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h10v9H3z"/><path d="M13 9h4.5l3.5 3.5V15h-8z"/><circle cx="7" cy="17.5" r="1.8"/><circle cx="16.5" cy="17.5" r="1.8"/></svg></span><span class="logo__txt"><span class="logo__main" style="font-size:1.2rem">Dispatch Admin</span></span></span>
+    <button class="btn btn--ghost" id="logoutBtn" style="display:none;border-color:rgba(255,255,255,.4)">Log out</button>
+  </div>
+</div>
+
+<!-- LOGIN -->
+<div class="adm-wrap adm-login" id="loginView">
+  <div class="form-card">
+    <h2 class="section-title" style="font-size:1.5rem">Dispatch sign-in</h2>
+    <p class="muted" style="margin-bottom:18px">Enter the backend URL and your admin token.</p>
+    <div class="field"><label>Backend API base URL <span class="muted">(leave blank if admin is on the same site)</span></label><input id="apiBase" type="text" placeholder="(same site) — or https://your-backend.com"></div>
+    <div class="field"><label>Admin token</label><input id="adminToken" type="password" placeholder="ADMIN_TOKEN"></div>
+    <button class="btn btn--primary btn--block" id="loginBtn">Sign in</button>
+    <p class="muted" id="loginErr" style="color:var(--red);margin-top:12px;display:none"></p>
+  </div>
+</div>
+
+<!-- DASHBOARD -->
+<div class="adm-wrap" id="dashView" style="display:none">
+  <div class="adm-stats" id="statsRow"></div>
+  <div class="adm-bar">
+    <strong>Orders</strong>
+    <select id="filterStatus"><option value="">All statuses</option></select>
+    <input id="search" type="text" placeholder="Search code, name, address…" style="flex:1;min-width:180px">
+    <button class="btn btn--outline" id="refreshBtn">↻ Refresh</button>
+  </div>
+  <div id="tableWrap"></div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+  var LS="mcAdmin";
+  var cfg = JSON.parse(localStorage.getItem(LS) || "{}");
+  var $ = function(id){ return document.getElementById(id); };
+  var orders=[], statuses=[];
+
+  function authHeaders(){ return { "x-admin-token": cfg.token, "Content-Type":"application/json" }; }
+  function api(path){ return (cfg.apiBase||"").replace(/\/$/,"") + path; }
+
+  function showLogin(msg){
+    $("loginView").style.display=""; $("dashView").style.display="none"; $("logoutBtn").style.display="none";
+    if(msg){ $("loginErr").style.display="block"; $("loginErr").textContent=msg; }
+  }
+  function showDash(){ $("loginView").style.display="none"; $("dashView").style.display=""; $("logoutBtn").style.display=""; }
+
+  $("loginBtn").addEventListener("click", function(){
+    cfg = { apiBase: $("apiBase").value.trim(), token: $("adminToken").value.trim() };
+    if(!cfg.token){ showLogin("Enter your admin token."); return; }
+    localStorage.setItem(LS, JSON.stringify(cfg));
+    load();
+  });
+  $("logoutBtn").addEventListener("click", function(){ localStorage.removeItem(LS); cfg={}; showLogin(); });
+  $("refreshBtn").addEventListener("click", load);
+  $("filterStatus").addEventListener("change", render);
+  $("search").addEventListener("input", render);
+
+  function money(n){ return n==null ? "—" : "$"+Number(n).toFixed(2); }
+
+  function load(){
+    fetch(api("/api/admin/orders"), { headers: authHeaders() })
+      .then(function(r){ if(!r.ok) throw new Error(r.status===401?"Invalid token.":"Error "+r.status); return r.json(); })
+      .then(function(d){ orders=d.orders||[]; statuses=d.statuses||[]; buildFilter(); showDash(); render(); })
+      .catch(function(e){ showLogin(e.message + " — check the URL/token. (Backend must be deployed & CORS-allow this page.)"); });
+  }
+
+  function buildFilter(){
+    var sel=$("filterStatus");
+    sel.innerHTML='<option value="">All statuses</option>'+statuses.map(function(s){return "<option>"+s+"</option>";}).join("");
+  }
+
+  function stats(){
+    var paid=orders.filter(function(o){return o.paid;});
+    var rev=paid.reduce(function(s,o){return s+(o.amountPaid||o.total||0);},0);
+    var data=[
+      ["Total orders", orders.length, ""],
+      ["Paid", paid.length, ""],
+      ["In transit", orders.filter(function(o){return o.status==="in_transit"||o.status==="picked_up"||o.status==="assigned";}).length, ""],
+      ["Delivered", orders.filter(function(o){return o.status==="delivered";}).length, ""],
+      ["Revenue", "$"+rev.toFixed(2), "rev"]
+    ];
+    $("statsRow").innerHTML=data.map(function(d){return "<div class='adm-stat "+d[2]+"'><b>"+d[1]+"</b><span>"+d[0]+"</span></div>";}).join("");
+  }
+
+  function render(){
+    stats();
+    var f=$("filterStatus").value, q=$("search").value.toLowerCase();
+    var rows=orders.filter(function(o){
+      if(f && o.status!==f) return false;
+      if(q){ var hay=(o.id+" "+(o.customer&&o.customer.name)+" "+o.pickupAddress+" "+(o.deliveryAddress||"")+" "+(o.serviceType||"")).toLowerCase(); if(hay.indexOf(q)<0) return false; }
+      return true;
+    });
+    if(!rows.length){ $("tableWrap").innerHTML="<div class='adm-empty'>No orders yet. Paid bookings will appear here automatically.</div>"; return; }
+    var html="<table class='adm-table'><thead><tr><th>Code</th><th>Customer</th><th>Service</th><th>Route</th><th>Total</th><th>Status</th></tr></thead><tbody>";
+    rows.forEach(function(o){
+      var c=o.customer||{};
+      var route = o.serviceType==="Route Delivery"
+        ? (o.numberOfStops||(o.stops||[]).length)+" stops from "+(o.pickupAddress||"—")
+        : (o.pickupAddress||"—")+" → "+(o.deliveryAddress||"—");
+      html+="<tr>"
+        +"<td><span class='adm-code'>"+o.id+"</span><div class='muted'>"+(o.createdAt||"").slice(0,16).replace("T"," ")+"</div></td>"
+        +"<td>"+(c.name||"—")+"<div class='muted'>"+(c.phone||"")+"<br>"+(c.email||"")+"</div></td>"
+        +"<td>"+(o.serviceType||"—")+"<div class='muted'>"+(o.weight||0)+" lb"+(o.date?" · "+o.date:"")+(o.time?" "+o.time:"")+"</div></td>"
+        +"<td class='muted'>"+route+(o.instructions?"<br><em>"+o.instructions+"</em>":"")+"</td>"
+        +"<td><b>"+money(o.amountPaid||o.total)+"</b><div class='muted'>"+(o.paid?"paid":"unpaid")+"</div></td>"
+        +"<td><span class='pill-status s-"+o.status+"'>"+(o.status||"").replace(/_/g," ")+"</span><br>"
+          +"<select data-id='"+o.id+"' style='margin-top:6px'>"+statuses.map(function(s){return "<option "+(s===o.status?"selected":"")+">"+s+"</option>";}).join("")+"</select></td>"
+        +"</tr>";
+    });
+    html+="</tbody></table>";
+    $("tableWrap").innerHTML=html;
+    $("tableWrap").querySelectorAll("select[data-id]").forEach(function(sel){
+      sel.addEventListener("change", function(){ updateStatus(sel.getAttribute("data-id"), sel.value); });
+    });
+  }
+
+  function updateStatus(id, status){
+    fetch(api("/api/admin/orders/"+id), { method:"PATCH", headers:authHeaders(), body:JSON.stringify({status:status}) })
+      .then(function(r){ return r.json(); })
+      .then(function(d){ if(d.order){ var i=orders.findIndex(function(o){return o.id===id;}); if(i>=0) orders[i]=d.order; render(); } })
+      .catch(function(){ alert("Could not update status."); });
+  }
+
+  // auto-login if creds saved
+  if(cfg.token){ $("apiBase").value=cfg.apiBase||""; load(); } else { showLogin(); }
+})();
+</script>
+</body>
+</html>

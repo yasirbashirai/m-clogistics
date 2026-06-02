@@ -1,0 +1,4 @@
+# Local-dev Express server (Vercel uses /api functions instead)
+server/
+node_modules/
+*.log

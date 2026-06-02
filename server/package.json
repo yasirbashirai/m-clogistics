@@ -1,0 +1,17 @@
+{
+  "name": "mc-logistics-checkout",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Stripe checkout + Shipday dispatch backend for M&C Logistics",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "engines": { "node": ">=18" },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.19.2",
+    "nodemailer": "^6.9.13",
+    "stripe": "^15.0.0"
+  }
+}

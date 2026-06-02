@@ -1,0 +1,35 @@
+# One-click deploy of the M&C checkout/admin backend on Render (https://render.com)
+# 1. Push this repo to GitHub.  2. Render → New → Blueprint → pick the repo.
+# 3. Render reads this file, deploys the API, and asks you for the secret env vars.
+services:
+  - type: web
+    name: mc-logistics-api
+    runtime: node
+    rootDir: server
+    plan: free
+    buildCommand: npm install
+    startCommand: node index.js
+    healthCheckPath: /track/__health   # returns 404 JSON = service is up
+    envVars:
+      - key: ADMIN_TOKEN          # dashboard login token — set your own
+        generateValue: true
+      - key: SITE_ORIGIN          # your site origin for CORS, e.g. https://mclogistics.delivery
+        sync: false
+      - key: STRIPE_SECRET_KEY    # add when going live (sk_live_…)
+        sync: false
+      - key: STRIPE_WEBHOOK_SECRET
+        sync: false
+      - key: GOOGLE_MAPS_API_KEY
+        sync: false
+      - key: SHIPDAY_API_KEY
+        sync: false
+      - key: SMTP_HOST
+        sync: false
+      - key: SMTP_PORT
+        value: "587"
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASS
+        sync: false
+      - key: MAIL_FROM
+        value: orders@mclogistics.delivery

@@ -1,0 +1,24 @@
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/
+
+# Node (only if a backend is added for Stripe)
+node_modules/
+.env
+.env.local
+npm-debug.log*
+
+# Build / misc
+dist/
+*.log
+
+# server secrets & deps
+server/.env
+server/node_modules/
+server/orders.json
+/node_modules/
+.vercel

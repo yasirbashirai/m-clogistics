@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Book a Delivery — M&amp;C Logistics | Instant Quote &amp; Online Checkout</title>
+<meta name="description" content="Book a same-day delivery under 100 lb online in under a minute. Instant quote and secure checkout. Serving Miami-Dade, Broward and Palm Beach County.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' rx='6' fill='%23E11D2A'/%3E%3Cg fill='none' stroke='white' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 7h9v8H3z'/%3E%3Cpath d='M12 9h4l3 3v3h-7z'/%3E%3Ccircle cx='6.5' cy='17' r='1.4'/%3E%3Ccircle cx='15.5' cy='17' r='1.4'/%3E%3C/g%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Sora:wght@600;700;800&display=swap" rel="stylesheet">
+<link rel="canonical" href="https://www.mclogistics-fl.com/booking.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="M&amp;C Logistics">
+<meta property="og:title" content="Book a Delivery — M&amp;C Logistics | Instant Quote &amp; Online Checkout">
+<meta property="og:description" content="Book a same-day delivery under 100 lb online in under a minute. Instant quote and secure checkout. Serving Miami-Dade, Broward and Palm Beach County.">
+<meta property="og:url" content="https://www.mclogistics-fl.com/booking.html">
+<meta property="og:image" content="https://www.mclogistics-fl.com/assets/img/team-van.jpg">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Book a Delivery — M&amp;C Logistics | Instant Quote &amp; Online Checkout">
+<meta name="twitter:description" content="Book a same-day delivery under 100 lb online in under a minute. Instant quote and secure checkout. Serving Miami-Dade, Broward and Palm Beach County.">
+<meta name="twitter:image" content="https://www.mclogistics-fl.com/assets/img/team-van.jpg">
+<meta name="robots" content="index,follow">
+<meta name="author" content="M&amp;C Logistics">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "LocalBusiness",
+  "name": "M&C Logistics",
+  "image": "https://www.mclogistics-fl.com/assets/img/team-van.jpg",
+  "description": "Same-day delivery and courier services across Miami-Dade, Broward and Palm Beach County, Florida.",
+  "@id": "https://www.mclogistics-fl.com/",
+  "url": "https://www.mclogistics-fl.com/",
+  "telephone": ["+19542032335","+19545440359"],
+  "email": "mcdeliverypersonnel24.7@gmail.com",
+  "address": { "@type": "PostalAddress", "addressLocality": "North Lauderdale", "addressRegion": "FL", "postalCode": "33068", "addressCountry": "US" },
+  "areaServed": ["Miami-Dade County","Broward County","Palm Beach County"],
+  "priceRange": "$$",
+  "openingHoursSpecification": [
+    { "@type": "OpeningHoursSpecification", "dayOfWeek": ["Monday","Tuesday","Wednesday","Thursday","Friday"], "opens": "07:00", "closes": "19:00" },
+    { "@type": "OpeningHoursSpecification", "dayOfWeek": "Saturday", "opens": "08:00", "closes": "16:00" }
+  ]
+}
+</script>
+<link rel="stylesheet" href="assets/css/styles.css">
+<!-- Stripe.js — used once the client's key + backend endpoint are added (see README) -->
+<script src="https://js.stripe.com/v3/"></script>
+</head>
+<body data-page="booking">
+
+<!-- ===== TOP BAR ===== -->
+<div class="topbar">
+  <div class="container">
+    <div class="topbar__phones">
+      <a href="tel:+19542032335">📞 (954) 203-2335</a>
+      <a href="tel:+19545440359">📞 (954) 544-0359</a>
+    </div>
+    <span class="topbar__note">Serving Miami-Dade · Broward · Palm Beach — Open 7 Days · 7AM–7PM</span>
+  </div>
+</div>
+
+<!-- ===== HEADER ===== -->
+<header class="header">
+  <div class="container nav">
+    <a href="index.html" class="logo">
+      <span class="logo__mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h10v9H3z"/><path d="M13 9h4.5l3.5 3.5V15h-8z"/><circle cx="7" cy="17.5" r="1.8"/><circle cx="16.5" cy="17.5" r="1.8"/></svg></span>
+      <span class="logo__txt">
+        <span class="logo__main">M<b>&amp;</b>C</span>
+        <span class="logo__sub">LOGISTICS</span>
+      </span>
+    </a>
+    <ul class="nav__links">
+      <li><a href="index.html" data-nav="home">Home</a></li>
+      <li><a href="services.html" data-nav="services">Services</a></li>
+      <li><a href="pricing.html" data-nav="pricing">Pricing</a></li>
+      <li><a href="about.html" data-nav="about">About Us</a></li>
+      <li><a href="service-area.html" data-nav="area">Service Area</a></li>
+      <li><a href="service-area.html#track" data-nav="track">Track</a></li>
+      <li><a href="contact.html" data-nav="contact">Contact</a></li>
+    </ul>
+    <div class="nav__cta">
+      <a href="booking.html" class="btn btn--primary">Book a Delivery</a>
+      <button class="nav__toggle" aria-label="Menu"><span></span><span></span><span></span></button>
+    </div>
+  </div>
+</header>
+
+<!-- ===== PAGE HERO ===== -->
+<section class="pagehero pagehero--photo" style="background-image:url('assets/img/team-loading.jpg')">
+  <div class="container">
+    <div class="breadcrumb"><a href="index.html">Home</a> / Book a Delivery</div>
+    <span class="eyebrow">Book Online</span>
+    <h1>Book Your Delivery</h1>
+    <p>Fast, easy, reliable — get an instant quote and pay online for deliveries under 100 lb. It takes about a minute.</p>
+  </div>
+</section>
+
+<!-- ===== BOOKING ===== -->
+<section class="section">
+  <div class="container booking-wrap">
+    <div class="grid" style="grid-template-columns:1.55fr 1fr;gap:40px;align-items:start">
+      <!-- LEFT: form -->
+      <form class="form-card" id="bookForm" novalidate>
+        <h3>1 · Choose your service</h3>
+        <div class="seg" id="svcSeg">
+          <button type="button" class="seg__btn active" data-svc="single">Single Delivery</button>
+          <button type="button" class="seg__btn" data-svc="route">Route Delivery (multi-stop)</button>
+        </div>
+
+        <h3>2 · Your contact details</h3>
+        <div class="field-row">
+          <div class="field"><label>Full name *</label><input id="custName" type="text" placeholder="Jane Doe" required></div>
+          <div class="field"><label>Phone *</label><input id="custPhone" type="tel" placeholder="(954) 000-0000" required></div>
+        </div>
+        <div class="field"><label>Email *</label><input id="custEmail" type="email" placeholder="you@example.com" required></div>
+
+        <h3>3 · Pickup</h3>
+        <div class="field"><label>Pickup address *</label><input id="pickupAddress" type="text" placeholder="123 Main St, Fort Lauderdale, FL" required></div>
+
+        <!-- SINGLE delivery fields -->
+        <div id="singleBlock">
+          <h3>4 · Delivery</h3>
+          <div class="field"><label>Delivery address *</label><input id="dropoffAddress" type="text" placeholder="456 Ocean Dr, Miami, FL"></div>
+          <div class="field-row">
+            <div class="field"><label>Distance (miles)</label><input id="bkMiles" type="number" min="0" step="1" value="8"></div>
+            <div class="field"><label>Package weight (lb)</label><input id="bkWeightSingle" type="number" min="0" step="1" value="10"></div>
+          </div>
+        </div>
+
+        <!-- ROUTE delivery fields -->
+        <div id="routeBlock" style="display:none">
+          <h3>4 · Route stops</h3>
+          <div class="field-row">
+            <div class="field"><label>Number of stops</label><input id="bkStops" type="number" min="1" max="9" step="1" value="3"></div>
+            <div class="field"><label>Farthest stop distance (mi)</label><input id="bkFarthest" type="number" min="0" step="1" value="20"></div>
+          </div>
+          <div class="field"><label>Heaviest package across stops (lb)</label><input id="bkWeightRoute" type="number" min="0" step="1" value="20"></div>
+          <div class="field"><label>Stop addresses</label><div class="stops-list" id="stopsList"></div></div>
+        </div>
+
+        <h3>5 · Schedule &amp; details</h3>
+        <div class="field-row">
+          <div class="field"><label>Delivery date</label><input id="bkDate" type="date"></div>
+          <div class="field"><label>Preferred time</label><input id="bkTime" type="time"></div>
+        </div>
+        <div class="field"><label>Special instructions</label><textarea id="bkNotes" placeholder="Gate code, fragile, leave at door, etc." style="min-height:90px"></textarea></div>
+
+        <h3>6 · Add-ons</h3>
+        <div class="chk-row">
+          <label class="chk"><input type="checkbox" id="bkRush"> Rush Delivery (+$15)</label>
+          <label class="chk"><input type="checkbox" id="bkWeekend"> Weekend Delivery (+$20)</label>
+          <label class="chk"><input type="checkbox" id="bkOvernight"> Overnight Delivery (+$35)</label>
+        </div>
+        <label class="chk" style="margin-top:10px"><input type="checkbox" id="bkOversized"> Over 100 lb / appliance / furniture / oversized or special handling</label>
+        <label class="chk" style="margin-top:8px"><input type="checkbox" id="bkRequestQuote"> I'd rather request a custom quote</label>
+      </form>
+
+      <!-- RIGHT: live summary + checkout -->
+      <div>
+        <div class="quote-box">
+          <h4>Order Summary</h4>
+          <div class="quote-line"><span>Service</span><span id="sumSvc">Single Delivery</span></div>
+          <div id="quoteLines"></div>
+          <div class="quote-total"><span>Total Due Today</span><span id="quoteTotal">$29.99</span></div>
+
+          <div id="customMsg" class="book-result info" style="display:none"></div>
+          <div id="bookMsg" class="book-result ok" style="display:none"></div>
+
+          <button class="btn btn--primary btn--block btn--lg mt-3" id="payBtn">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>
+            Pay Securely with Stripe
+          </button>
+          <button class="btn btn--outline btn--block mt-2" id="quoteBtn" style="display:none">Submit Quote Request</button>
+          <p class="pay-note"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg> Secured by Stripe · 256-bit encryption</p>
+        </div>
+
+        <div class="form-card" style="margin-top:20px;background:var(--ink);color:#fff;border:0">
+          <h3 style="color:#fff;margin:0 0 6px">Need help booking?</h3>
+          <p style="color:#bcc2cb;font-size:.94rem">Call dispatch and we'll set it up for you.</p>
+          <p style="margin-top:14px"><a href="tel:+19542032335" style="color:#fff;font-weight:800;font-size:1.15rem">📞 (954) 203-2335</a></p>
+          <p><a href="tel:+19545440359" style="color:#fff;font-weight:800;font-size:1.15rem">📞 (954) 544-0359</a></p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== WHY BOOK WITH US ===== -->
+<section class="section section--soft">
+  <div class="container">
+    <div class="center reveal">
+      <span class="eyebrow">Why Book With M&amp;C</span>
+      <h2 class="section-title">Booking You Can <span class="u">Count On</span></h2>
+      <p class="section-sub">Transparent pricing, professional drivers, and live updates from pickup to proof-of-delivery.</p>
+    </div>
+    <div class="value-grid mt-4 stagger">
+      <div class="value">
+        <span class="value__ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span>
+        <h3>Same-Day, Every Day</h3>
+        <p>Book before our cut-off and your delivery moves today — including weekends, 7 days a week.</p>
+      </div>
+      <div class="value">
+        <span class="value__ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1l3 6 6 .9-4.5 4.3 1 6.3L12 17l-5.5 2.8 1-6.3L3 7.9 9 7z"/></svg></span>
+        <h3>Upfront Pricing</h3>
+        <p>Your quote is calculated instantly as you book. No hidden fees, no surprises at checkout.</p>
+      </div>
+      <div class="value">
+        <span class="value__ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-5.5-7-11a7 7 0 0 1 14 0c0 5.5-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg></span>
+        <h3>Tracked End-to-End</h3>
+        <p>Follow your driver live and get instant photo or signature proof the moment it's delivered.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== IMAGE BAND ===== -->
+<section class="imgband" style="background-image:url('assets/img/fleet-banner.jpg')">
+  <div class="container">
+    <span class="eyebrow" style="color:#ff8a93;background:rgba(255,255,255,.1)">Bigger Than 100 lb?</span>
+    <h2>Appliances, freight &amp; oversized loads</h2>
+    <p>For heavy or oversized items we'll build you a fast custom quote — just give dispatch a call.</p>
+    <div class="hero__btns" style="justify-content:center">
+      <a href="tel:+19542032335" class="btn btn--primary btn--lg">📞 (954) 203-2335</a>
+      <a href="contact.html" class="btn btn--ghost btn--lg">Request a Quote</a>
+    </div>
+  </div>
+</section>
+
+<!-- ===== FOOTER ===== -->
+<footer class="footer">
+  <div class="container footer__grid">
+    <div>
+      <a href="index.html" class="logo"><span class="logo__mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h10v9H3z"/><path d="M13 9h4.5l3.5 3.5V15h-8z"/><circle cx="7" cy="17.5" r="1.8"/><circle cx="16.5" cy="17.5" r="1.8"/></svg></span><span class="logo__txt"><span class="logo__main">M<b>&amp;</b>C</span><span class="logo__sub">LOGISTICS</span></span></a>
+      <p class="footer__about">South Florida's trusted partner for fast, reliable same-day delivery and logistics — serving Miami-Dade, Broward &amp; Palm Beach, 7 days a week.</p>
+      <div class="footer__socials">
+        <a href="#" aria-label="Facebook"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M22 12a10 10 0 1 0-11.5 9.9v-7H8v-2.9h2.5V9.8c0-2.5 1.5-3.9 3.8-3.9 1.1 0 2.2.2 2.2.2v2.5h-1.3c-1.2 0-1.6.8-1.6 1.6v1.8h2.8L15.7 15h-2.3v7A10 10 0 0 0 22 12z"/></svg></a>
+        <a href="#" aria-label="Instagram"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor"/></svg></a>
+        <a href="#" aria-label="Google"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M21.8 12.2c0-.7-.1-1.4-.2-2H12v3.8h5.5a4.7 4.7 0 0 1-2 3.1v2.6h3.2c1.9-1.7 3-4.3 3-7.5z"/><path d="M12 22c2.7 0 4.9-.9 6.6-2.4l-3.2-2.5c-.9.6-2 1-3.4 1-2.6 0-4.8-1.7-5.6-4.1H3.1v2.6A10 10 0 0 0 12 22z"/></svg></a>
+      </div>
+    </div>
+    <div>
+      <h4>Quick Links</h4>
+      <ul class="footer__links">
+        <li><a href="index.html">Home</a></li><li><a href="services.html">Services</a></li>
+        <li><a href="pricing.html">Pricing</a></li><li><a href="about.html">About Us</a></li>
+        <li><a href="service-area.html">Service Area</a></li><li><a href="service-area.html#track">Track a Package</a></li>
+        <li><a href="contact.html">Contact</a></li>
+      </ul>
+    </div>
+    <div>
+      <h4>Services</h4>
+      <ul class="footer__links">
+        <li><a href="services.html">Same-Day Delivery</a></li><li><a href="services.html">Medical Courier</a></li>
+        <li><a href="services.html">Legal Document Delivery</a></li><li><a href="services.html">Appliance Delivery &amp; Haul-Away</a></li>
+        <li><a href="services.html">Tire &amp; Parts Delivery</a></li><li><a href="services.html">Routed Deliveries</a></li>
+      </ul>
+    </div>
+    <div>
+      <h4>Contact Info</h4>
+      <ul class="footer__links footer__contact">
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3 19.5 19.5 0 0 1-6-6 19.8 19.8 0 0 1-3-8.6A2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7l.5 2.5a2 2 0 0 1-.6 1.9L7.9 9.4a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 1.9-.5l2.5.5a2 2 0 0 1 1.7 2z"/></svg><a href="tel:+19542032335">(954) 203-2335</a></li>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3 19.5 19.5 0 0 1-6-6 19.8 19.8 0 0 1-3-8.6A2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7l.5 2.5a2 2 0 0 1-.6 1.9L7.9 9.4a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 1.9-.5l2.5.5a2 2 0 0 1 1.7 2z"/></svg><a href="tel:+19545440359">(954) 544-0359</a></li>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m2 7 10 6 10-6"/></svg><a href="mailto:mcdeliverypersonnel24.7@gmail.com">mcdeliverypersonnel24.7@gmail.com</a></li>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-5.5-7-11a7 7 0 0 1 14 0c0 5.5-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg><span>North Lauderdale, FL 33068 — Serving Miami-Dade, Broward &amp; Palm Beach County</span></li>
+      </ul>
+    </div>
+  </div>
+  <div class="footer__bar">
+    <div class="container footer__bar-in">
+      <span>© <span data-year>2026</span> M&amp;C Logistics. All Rights Reserved.</span>
+      <div class="footer__pays"><span>VISA</span><span>MC</span><span>AMEX</span><span>ZELLE</span><span>CASH</span></div>
+      <div class="footer__legal"><a href="service-area.html#track">Track</a><a href="contact.html">Contact</a><a href="booking.html">Book</a></div>
+    </div>
+  </div>
+</footer>
+
+<!-- ==== M&C checkout configuration (fill these in to go live) ==== -->
+<script>
+  window.MC_CONFIG = {
+    // Your Stripe PUBLISHABLE key (pk_live_… or pk_test_). Add this in Vercel-deployed
+    // index/booking or here once you connect Stripe. Leave blank to stay in demo mode.
+    stripePublishableKey: "",
+    // Same-origin Vercel serverless functions (see /api). No CORS, no separate host.
+    checkoutEndpoint: "/api/create-checkout-session",
+    quoteEndpoint: "/api/quote-request"
+  };
+</script>
+<script src="assets/js/quote-calculator.js"></script>
+<script src="assets/js/main.js"></script>
+<script src="assets/js/enhance.js"></script>
+<script src="assets/js/booking.js"></script>
+<script src="assets/js/chatbot.js"></script>
+</body>
+</html>
