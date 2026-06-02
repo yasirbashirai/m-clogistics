@@ -975,3 +975,17 @@ html, body{ overflow-x:hidden; }
   .hero--bg{ background-position:center; }
   .hero__side{ min-height:0; justify-content:center; margin-top:8px; }
 }
+
+/* v12 — mobile: move "Book a Delivery" out of the header bar into the dropdown */
+.nav__book-m{ display:none; }
+@media (max-width:760px){
+  .nav__cta .btn--primary{ display:none; }          /* hide Book in the top bar on mobile */
+  .nav__book-m{ display:block; }
+  .nav__links .nav__book-m a{
+    display:block; margin:10px 20px 4px; padding:14px; text-align:center;
+    background:var(--red); color:#fff; border-radius:10px;
+    font-size:.95rem; font-weight:800; letter-spacing:0; text-transform:none;
+    box-shadow:0 8px 20px rgba(225,29,42,.3);
+  }
+  .nav__links .nav__book-m a::after{ display:none; }
+}
