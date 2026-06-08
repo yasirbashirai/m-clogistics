@@ -8,12 +8,80 @@ const cors = require("cors");
 const Stripe = require("stripe");
 const store = require("./store");
 const { priceOrder } = require("./pricing");
+const notify = require("./notify");
+const shipday = require("./shipday");
 
 const app = express();
 app.use(cors({ origin: process.env.SITE_ORIGIN || "*" }));
 app.use(express.json({ limit: "1mb" }));
 
 const r2 = (n) => Math.round((n + Number.EPSILON) * 100) / 100;
+
+/* ---- distance (auto-mileage): Google Distance Matrix if a key is set,
+        else a keyless geocode + haversine estimate (×1.3 road factor) ---- */
+async function computeMiles(from, to) {
+  const key = process.env.GOOGLE_MAPS_API_KEY;
+  if (key) {
+    try {
+      const url = "https://maps.googleapis.com/maps/api/distancematrix/json?units=imperial" +
+        "&origins=" + encodeURIComponent(from) + "&destinations=" + encodeURIComponent(to) + "&key=" + key;
+      const j = await (await fetch(url)).json();
+      const el = j.rows && j.rows[0] && j.rows[0].elements && j.rows[0].elements[0];
+      if (el && el.status === "OK" && el.distance) return { miles: el.distance.value / 1609.344, source: "google" };
+    } catch (_) { /* fall through to estimate */ }
+  }
+  const geo = async (q) => {
+    const r = await fetch("https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=us&q=" + encodeURIComponent(q),
+      { headers: { "User-Agent": "mclogistics-quote/1.0", Accept: "application/json" } });
+    const j = await r.json();
+    return (j && j[0]) ? { lat: +j[0].lat, lon: +j[0].lon } : null;
+  };
+  try {
+    const [a, b] = await Promise.all([geo(from), geo(to)]);
+    if (a && b) {
+      const R = 3958.8, rad = (x) => x * Math.PI / 180;
+      const dLat = rad(b.lat - a.lat), dLon = rad(b.lon - a.lon);
+      const h = Math.sin(dLat / 2) ** 2 + Math.cos(rad(a.lat)) * Math.cos(rad(b.lat)) * Math.sin(dLon / 2) ** 2;
+      return { miles: 2 * R * Math.asin(Math.sqrt(h)) * 1.3, source: "estimate" };
+    }
+  } catch (_) { /* unresolved */ }
+  return null;
+}
+
+/* ---- per-vehicle daily booking caps + roll-to-next-available-day ---- */
+function capFor(P, vehicle) { const v = ((P && P.vehicles) || []).find((x) => x.id === vehicle); return v ? v.dailyCap : null; }
+function addDays(iso, n) {
+  const p = String(iso).split("-");
+  const d = new Date(Date.UTC(+p[0], +p[1] - 1, +p[2]));
+  d.setUTCDate(d.getUTCDate() + n);
+  return d.toISOString().slice(0, 10);
+}
+async function countForDay(vehicle, date) {
+  const orders = await store.listColl("orders");
+  return orders.filter((o) => o.vehicle === vehicle && (o.requestedDate || o.date) === date && o.status !== "canceled").length;
+}
+// First day on/after `date` that still has capacity for `vehicle`.
+async function resolveDay(P, vehicle, date) {
+  const cap = capFor(P, vehicle);
+  if (cap == null || !date) return { date, rolled: false, cap };
+  let d = date;
+  for (let i = 0; i < 60; i++) {
+    if ((await countForDay(vehicle, d)) < cap) return { date: d, rolled: i > 0, cap };
+    d = addDays(d, 1);
+  }
+  return { date, rolled: false, cap };
+}
+
+// Fulfill a paid order: email dispatch + customer, then create the Shipday delivery.
+async function fulfillPaidOrder(order) {
+  const settings = await store.getConfig("settings");
+  const dispatchEmails = (settings && settings.dispatchEmails) || ["dispatch@mclogistics.delivery", "mcdeliverypersonnel24.7@gmail.com"];
+  try { await notify.notifyPaidOrder(order, dispatchEmails); } catch (_) { /* email best-effort */ }
+  try {
+    const sd = await shipday.createShipdayOrder(order);
+    if (sd && sd.created) await store.updateColl("orders", order.id, { shipdayId: (sd.data && (sd.data.orderId || sd.data.id)) || true });
+  } catch (_) { /* shipday best-effort */ }
+}
 
 function requireAdmin(req, res, next) {
   if (!process.env.ADMIN_TOKEN || req.headers["x-admin-token"] === process.env.ADMIN_TOKEN) return next();
@@ -38,6 +106,31 @@ app.get("/api/config", async (req, res) => {
   });
 });
 
+// Auto-mileage: returns miles for two addresses (Google DM if keyed, else estimate)
+app.post("/api/distance", async (req, res) => {
+  try {
+    const { from, to } = req.body || {};
+    if (!from || !to) return res.status(400).json({ error: "from_and_to_required" });
+    const r = await computeMiles(from, to);
+    if (!r) return res.status(200).json({ error: "unresolved" });
+    res.json({ miles: Math.round(r.miles), source: r.source });
+  } catch (e) { res.status(200).json({ error: e.message }); }
+});
+
+// Per-vehicle daily availability — is `date` full for `vehicle`? what's the next open day?
+app.get("/api/availability", async (req, res) => {
+  try {
+    const P = await store.getConfig("pricing");
+    const vehicle = String(req.query.vehicle || ""), date = String(req.query.date || "");
+    const cap = capFor(P, vehicle);
+    if (cap == null || !date) return res.json({ full: false });
+    const count = await countForDay(vehicle, date);
+    if (count < cap) return res.json({ full: false, count, cap });
+    const next = await resolveDay(P, vehicle, addDays(date, 1));
+    res.json({ full: true, cap, count, nextDate: next.date });
+  } catch (e) { res.json({ full: false, error: e.message }); }
+});
+
 // Create Stripe Checkout session (price recomputed server-side from admin pricing)
 app.post("/api/create-checkout-session", async (req, res) => {
   try {
@@ -46,10 +139,23 @@ app.post("/api/create-checkout-session", async (req, res) => {
     const priced = priceOrder(order, P);
     if (priced.custom) return res.status(400).json({ error: "custom_quote", reason: priced.reason });
 
+    // Enforce the per-vehicle daily cap — roll a full day to the next available one.
+    let rolled = null;
+    if (order.vehicle && order.requestedDate) {
+      const slot = await resolveDay(P, order.vehicle, order.requestedDate);
+      if (slot.rolled) {
+        rolled = { from: order.requestedDate, to: slot.date };
+        order.requestedDate = slot.date;
+        order.date = slot.date;
+        order.rolledOver = true;
+        order.rollNote = `Bookings were full on ${rolled.from}; scheduled for ${slot.date}.`;
+      }
+    }
+
     const rec = await store.addColl("orders", { ...order, breakdown: priced.lines, total: priced.total, status: "pending_payment", paid: false });
 
     const key = await stripeKey();
-    if (!key) return res.status(200).json({ error: "stripe_not_configured", trackingCode: rec.id, total: priced.total });
+    if (!key) return res.status(200).json({ error: "stripe_not_configured", trackingCode: rec.id, total: priced.total, rolled });
 
     const stripe = Stripe(key);
     const origin = process.env.SITE_ORIGIN || (req.headers.origin || ("https://" + req.headers.host));
@@ -62,7 +168,7 @@ app.post("/api/create-checkout-session", async (req, res) => {
       cancel_url: origin + "/booking.html?canceled=1",
       metadata: { orderId: rec.id }
     });
-    res.json({ id: session.id, url: session.url, trackingCode: rec.id });
+    res.json({ id: session.id, url: session.url, trackingCode: rec.id, rolled });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
@@ -75,7 +181,10 @@ app.post("/api/webhook", async (req, res) => {
     const s = await stripe.checkout.sessions.retrieve(event.data.object.id);
     if (s.payment_status !== "paid") return res.json({ received: true });
     const id = (s.metadata && s.metadata.orderId) || s.client_reference_id;
-    if (id) await store.updateColl("orders", id, { status: "paid", paid: true, amountPaid: (s.amount_total || 0) / 100, stripePaymentId: s.payment_intent || s.id });
+    if (id) {
+      const updated = await store.updateColl("orders", id, { status: "paid", paid: true, amountPaid: (s.amount_total || 0) / 100, stripePaymentId: s.payment_intent || s.id });
+      if (updated) await fulfillPaidOrder(updated);   // email dispatch + customer, create Shipday delivery
+    }
     res.json({ received: true });
   } catch (e) { res.status(200).json({ received: true, error: e.message }); }
 });

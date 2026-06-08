@@ -1,68 +1,107 @@
 /* ==========================================================================
    M&C Logistics — authoritative server-side pricing.
-   priceOrder(order, P) — P is the pricing config (from the store/admin), or the
+   priceOrder(order, P) — P is the pricing config (from the store/admin) or the
    built-in default. The server NEVER trusts the price sent by the browser.
+   Kept in sync with assets/js/quote-calculator.js.
    ========================================================================== */
 "use strict";
 
 const DEFAULT_P = {
-  singleTiers: [
-    { max: 10, price: 29.99 }, { max: 20, price: 39.99 }, { max: 30, price: 49.99 },
-    { max: 40, price: 59.99 }, { max: 50, price: 69.99 }, { max: 60, price: 79.99 }
+  bands: [10, 20, 30, 40, 50, 60],
+  weightClasses: [
+    { maxWeight: 100, label: "Standard (≤100 lb)", tiers: [39.99, 49.99, 59.99, 69.99, 79.99, 89.99] },
+    { maxWeight: 200, label: "Heavy (101–200 lb)", tiers: [89.99, 99.99, 109.99, 119.99, 129.99, 139.99] }
   ],
-  overageStartMiles: 60, overagePerMile: 1.5,
+  maxWeight: 200,
+  overageStartMiles: 60,
+  overagePerMile: 1.5,
   route: { base: 49.99, perStop: 19.0 },
-  addons: { rush: 15, weekend: 20, overnight: 35 },
-  maxWeight: 100
+  addons: { helper: 75, furnitureDolly: 5, standardDolly: 5, rush: 15, overnight: 35, weekend: 20 },
+  addonLabels: { helper: "Helper", furnitureDolly: "Furniture dolly", standardDolly: "Standard dolly", rush: "Rush delivery", overnight: "Overnight delivery", weekend: "Weekend delivery" },
+  foamWrapPerItem: 5,
+  vehicles: [
+    { id: "car",          label: "Car",               surcharge: 0, dailyCap: 25 },
+    { id: "compact_van",  label: "Compact cargo van", surcharge: 0, dailyCap: 20 },
+    { id: "sprinter_van", label: "Sprinter van",      surcharge: 0, dailyCap: 25 }
+  ],
+  dispatchLeadMinutes: 30
 };
 
 const r2 = (n) => Math.round((n + Number.EPSILON) * 100) / 100;
 
-function addonLines(P, a = {}) {
+function weightClassFor(P, weight) {
+  const w = Math.max(0, Number(weight) || 0);
+  return P.weightClasses.find((c) => w <= c.maxWeight) || null;
+}
+
+function distanceLines(P, wc, miles) {
+  const m = Math.max(0, Number(miles) || 0);
+  const lines = [];
+  let total = 0;
+  let idx = P.bands.findIndex((b) => m <= b);
+  if (idx >= 0) {
+    const lo = idx === 0 ? 0 : P.bands[idx - 1] + 1;
+    lines.push({ label: `Distance (${lo}–${P.bands[idx]} mi)`, amount: wc.tiers[idx] });
+    total += wc.tiers[idx];
+  } else {
+    const base = wc.tiers[wc.tiers.length - 1];
+    lines.push({ label: "Distance (0–60 mi base)", amount: base });
+    total += base;
+    const extra = Math.round(m - P.overageStartMiles);
+    const over = r2(extra * P.overagePerMile);
+    lines.push({ label: `Mileage surcharge (${extra} mi × $${P.overagePerMile.toFixed(2)})`, amount: over });
+    total += over;
+  }
+  return { lines, total: r2(total) };
+}
+
+function extraLines(P, order) {
+  const a = order.addons || {};
   const out = [];
-  if (a.rush) out.push({ label: "Rush Delivery", amount: P.addons.rush });
-  if (a.weekend) out.push({ label: "Weekend Delivery", amount: P.addons.weekend });
-  if (a.overnight) out.push({ label: "Overnight Delivery", amount: P.addons.overnight });
+  ["helper", "furnitureDolly", "standardDolly", "rush", "overnight", "weekend"].forEach((k) => {
+    if (a[k]) out.push({ label: P.addonLabels[k] || k, amount: P.addons[k] });
+  });
+  const items = Math.max(0, parseInt(order.foamWrapItems, 10) || 0);
+  if (items > 0) out.push({ label: `Foam wrap (${items} item${items > 1 ? "s" : ""} × $${P.foamWrapPerItem.toFixed(2)})`, amount: r2(items * P.foamWrapPerItem) });
+  const veh = (P.vehicles || []).find((v) => v.id === order.vehicle);
+  if (veh && veh.surcharge > 0) out.push({ label: veh.label, amount: veh.surcharge });
   return out;
 }
 
 function priceOrder(order, P) {
   P = P || DEFAULT_P;
-  const addons = order.addons || {};
+  // Forward-compatible: fill any missing config keys from the default.
+  for (const k of Object.keys(DEFAULT_P)) if (P[k] === undefined) P[k] = DEFAULT_P[k];
+
   const oversized = !!order.oversized;
   const requestQuote = !!order.requestQuote || order.requestType === "Custom Quote";
-  const weight = Number(order.weight) || 0;
-
   if (requestQuote) return { custom: true, reason: "Customer requested a custom quote." };
   if (oversized) return { custom: true, reason: "Oversized / special-handling item." };
-  if (weight > P.maxWeight) return { custom: true, reason: `Over ${P.maxWeight} lb.` };
 
   const lines = [];
   let total = 0;
 
   if (order.serviceType === "Route Delivery") {
+    const heaviest = Number(order.weight) || 0;
+    if (heaviest > P.maxWeight) return { custom: true, reason: `Any stop over ${P.maxWeight} lb requires a custom quote.` };
     const stops = Math.max(1, parseInt(order.numberOfStops, 10) || 1);
     lines.push({ label: "Route base fee", amount: P.route.base }); total += P.route.base;
     const stopsCost = r2(stops * P.route.perStop);
     lines.push({ label: `Stops: ${stops} × $${P.route.perStop.toFixed(2)}`, amount: stopsCost }); total += stopsCost;
     const far = Number(order.miles) || 0;
     if (far > P.overageStartMiles) {
-      const over = r2((far - P.overageStartMiles) * P.overagePerMile);
-      lines.push({ label: `Mileage surcharge (${Math.round(far - P.overageStartMiles)} mi)`, amount: over }); total += over;
+      const extra = Math.round(far - P.overageStartMiles);
+      const over = r2(extra * P.overagePerMile);
+      lines.push({ label: `Mileage surcharge (${extra} mi × $${P.overagePerMile.toFixed(2)})`, amount: over }); total += over;
     }
   } else {
-    const miles = Number(order.miles) || 0;
-    const tier = P.singleTiers.find((t) => miles <= t.max);
-    if (tier) { lines.push({ label: "Distance", amount: tier.price }); total += tier.price; }
-    else {
-      const base = P.singleTiers[P.singleTiers.length - 1].price;
-      lines.push({ label: "Distance (0–60 mi base)", amount: base }); total += base;
-      const over = r2((miles - P.overageStartMiles) * P.overagePerMile);
-      lines.push({ label: `Mileage surcharge (${Math.round(miles - P.overageStartMiles)} mi)`, amount: over }); total += over;
-    }
+    const wc = weightClassFor(P, order.weight);
+    if (!wc) return { custom: true, reason: `Deliveries over ${P.maxWeight} lb require a custom quote.` };
+    const d = distanceLines(P, wc, Number(order.miles) || 0);
+    d.lines.forEach((l) => { lines.push(l); total += l.amount; });
   }
 
-  addonLines(P, addons).forEach((l) => { lines.push(l); total += l.amount; });
+  extraLines(P, order).forEach((l) => { lines.push(l); total += l.amount; });
   return { custom: false, lines, total: r2(total) };
 }
 

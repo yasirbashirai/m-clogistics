@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <url><loc>https://www.mclogistics-fl.com/</loc><changefreq>weekly</changefreq><priority>1.0</priority></url>
-  <url><loc>https://www.mclogistics-fl.com/services.html</loc><changefreq>monthly</changefreq><priority>0.9</priority></url>
-  <url><loc>https://www.mclogistics-fl.com/pricing.html</loc><changefreq>monthly</changefreq><priority>0.9</priority></url>
-  <url><loc>https://www.mclogistics-fl.com/about.html</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
-  <url><loc>https://www.mclogistics-fl.com/service-area.html</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
-  <url><loc>https://www.mclogistics-fl.com/contact.html</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
-  <url><loc>https://www.mclogistics-fl.com/testimonials.html</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
-  <url><loc>https://www.mclogistics-fl.com/booking.html</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://mclogistics.delivery/</loc><changefreq>weekly</changefreq><priority>1.0</priority></url>
+  <url><loc>https://mclogistics.delivery/services.html</loc><changefreq>monthly</changefreq><priority>0.9</priority></url>
+  <url><loc>https://mclogistics.delivery/booking.html</loc><changefreq>weekly</changefreq><priority>0.9</priority></url>
+  <url><loc>https://mclogistics.delivery/about.html</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://mclogistics.delivery/service-area.html</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://mclogistics.delivery/careers.html</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://mclogistics.delivery/contact.html</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://mclogistics.delivery/testimonials.html</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
 </urlset>

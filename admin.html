@@ -237,22 +237,39 @@
   /* ---------- PRICING ---------- */
   function renderPricing(m){
     var p=state.pricing;
+    var bands=p.bands||[10,20,30,40,50,60];
+    var wcHtml=(p.weightClasses||[]).map(function(wc,ci){
+      var rows=bands.map(function(b,bi){
+        var lo=bi===0?0:bands[bi-1]+1;
+        return '<div class="price-tier"><label>'+lo+'–'+b+' mi</label><input type="number" step="0.01" data-wc="'+ci+'" data-band="'+bi+'" value="'+(wc.tiers[bi]!=null?wc.tiers[bi]:0)+'" style="max-width:140px"></div>';
+      }).join("");
+      return '<div class="card2"><h3>'+wc.label+' — distance tiers</h3><div style="margin-top:12px">'+rows+'</div></div>';
+    }).join("");
+    var veh=(p.vehicles||[]);
+    var vehHtml=veh.map(function(v,i){ return fld(v.label+" — orders/day","p_cap_"+i,v.dailyCap); }).join("");
     m.innerHTML='<div class="adm-h"><h1>Services &amp; Pricing</h1></div>'+
-      '<div class="card2"><h3>Single Delivery — distance tiers</h3><div id="tiers" style="margin-top:12px"></div></div>'+
+      wcHtml+
       '<div class="card2"><h3>Route Delivery</h3><div class="grid2" style="margin-top:12px">'+
         fld("Base fee ($)","p_base",p.route.base)+fld("Per stop ($)","p_perstop",p.route.perStop)+'</div></div>'+
       '<div class="card2"><h3>Mileage &amp; limits</h3><div class="grid3" style="margin-top:12px">'+
-        fld("Overage starts after (mi)","p_overstart",p.overageStartMiles)+fld("Per extra mile ($)","p_permile",p.overagePerMile)+fld("Max weight for instant (lb)","p_maxw",p.maxWeight)+'</div></div>'+
+        fld("Overage starts after (mi)","p_overstart",p.overageStartMiles)+fld("Per extra mile ($)","p_permile",p.overagePerMile)+fld("Max weight for instant (lb)","p_maxw",p.maxWeight)+'</div>'+
+        '<div class="grid2" style="margin-top:12px">'+fld("Dispatch lead time (min)","p_lead",p.dispatchLeadMinutes||30)+fld("Foam wrap ($/item)","p_foam",p.foamWrapPerItem||5)+'</div></div>'+
       '<div class="card2"><h3>Add-on fees</h3><div class="grid3" style="margin-top:12px">'+
-        fld("Rush ($)","p_rush",p.addons.rush)+fld("Weekend ($)","p_weekend",p.addons.weekend)+fld("Overnight ($)","p_overnight",p.addons.overnight)+'</div></div>'+
+        fld("Helper ($)","p_helper",p.addons.helper)+fld("Furniture dolly ($)","p_furndolly",p.addons.furnitureDolly)+fld("Standard dolly ($)","p_stddolly",p.addons.standardDolly)+'</div>'+
+        '<div class="grid3" style="margin-top:12px">'+fld("Rush ($)","p_rush",p.addons.rush)+fld("Weekend ($)","p_weekend",p.addons.weekend)+fld("Overnight ($)","p_overnight",p.addons.overnight)+'</div></div>'+
+      '<div class="card2"><h3>Vehicle daily caps</h3><div class="grid3" style="margin-top:12px">'+vehHtml+'</div></div>'+
       '<button class="btn btn--primary" id="savePricing">Save pricing</button>';
-    var t=$("tiers");
-    t.innerHTML=p.singleTiers.map(function(tier,i){ return '<div class="price-tier"><label>≤ '+tier.max+' mi</label><input type="number" step="0.01" data-tier="'+i+'" value="'+tier.price+'" style="max-width:140px"></div>'; }).join("");
     $("savePricing").addEventListener("click",function(){
-      var tiers=p.singleTiers.map(function(tier,i){ return { max:tier.max, price:Number(t.querySelector('[data-tier="'+i+'"]').value)||0 }; });
-      var body={ singleTiers:tiers, route:{ base:num("p_base"), perStop:num("p_perstop") },
+      var classes=(p.weightClasses||[]).map(function(wc,ci){
+        var tiers=bands.map(function(b,bi){ var el=m.querySelector('[data-wc="'+ci+'"][data-band="'+bi+'"]'); return Number(el&&el.value)||0; });
+        return { maxWeight:wc.maxWeight, label:wc.label, tiers:tiers };
+      });
+      var vehicles=veh.map(function(v,i){ return { id:v.id, label:v.label, surcharge:v.surcharge||0, dailyCap:num("p_cap_"+i) }; });
+      var body={ bands:bands, weightClasses:classes, route:{ base:num("p_base"), perStop:num("p_perstop") },
         overageStartMiles:num("p_overstart"), overagePerMile:num("p_permile"), maxWeight:num("p_maxw"),
-        addons:{ rush:num("p_rush"), weekend:num("p_weekend"), overnight:num("p_overnight") } };
+        dispatchLeadMinutes:num("p_lead"), foamWrapPerItem:num("p_foam"),
+        addons:{ helper:num("p_helper"), furnitureDolly:num("p_furndolly"), standardDolly:num("p_stddolly"), rush:num("p_rush"), weekend:num("p_weekend"), overnight:num("p_overnight") },
+        vehicles:vehicles };
       send("PUT","/api/admin/pricing",body).then(function(d){ state.pricing=d.pricing; toast("Pricing saved — live on the site"); });
     });
   }

@@ -26,20 +26,25 @@ can be hosted anywhere — no build step required.
 mc-logistics/
 ├── index.html            # Landing page
 ├── services.html         # Services overview
-├── pricing.html          # Pricing + instant quote calculator
+├── booking.html          # Book a Delivery — live quote + Stripe checkout
+├── pricing.html          # Redirects to booking.html (pricing is now live on the form)
 ├── about.html            # About the company
 ├── service-area.html     # Coverage map + LIVE TRACKING
+├── careers.html          # Careers / hiring + application form
 ├── contact.html          # Contact form + embedded Google Map
-├── testimonials.html     # Customer reviews
-├── booking.html          # Multi-step booking flow
+├── testimonials.html     # Real customer reviews (assets/testimonials screenshots)
+├── admin.html            # Private dispatch dashboard (noindex)
+├── server/               # Express API (Stripe, distance, caps, email, Shipday)
+│   ├── app.js  pricing.js  store.js  notify.js  shipday.js
 └── assets/
     ├── css/styles.css     # Full design system + premium revamp layer
     ├── img/               # Optimized M&C brand photography
+    ├── testimonials/      # Real review screenshots used on testimonials.html
     └── js/
         ├── main.js            # Nav, scroll reveal, footer year, form handler
         ├── enhance.js         # Scroll progress, count-up, FAQ, gallery, map
-        ├── quote-calculator.js# Pricing engine + Pricing-page estimator
-        ├── booking.js         # Booking stepper logic
+        ├── quote-calculator.js# Shared pricing engine (weight tiers, add-ons, vehicles)
+        ├── booking.js         # Booking logic: auto-distance, options, caps, checkout
         ├── tracking.js        # Live tracking engine
         └── chatbot.js         # "Marco" chat assistant
 ```
@@ -58,15 +63,26 @@ embedded Google Map load cleanly.
 
 ## 💳 Booking & Stripe Checkout
 
-The **Pricing** and **Booking** pages share one pricing engine
-(`assets/js/quote-calculator.js`) implementing the official M&C pricing:
+The **Booking** page (the nav "Book a Delivery" item; `pricing.html` now just
+redirects here) uses one pricing engine — `assets/js/quote-calculator.js`, mirrored
+server-side by `server/pricing.js` (the server never trusts the browser's price).
+The customer **never types miles** — distance is calculated automatically from the
+addresses, and the **price builds live as options are clicked** (no price table is shown):
 
-| Service | Pricing |
+| Item | Pricing |
 |---|---|
-| **Single Delivery** | 0–10 mi $29.99 · 11–20 $39.99 · 21–30 $49.99 · 31–40 $59.99 · 41–50 $69.99 · 51–60 $79.99 · **over 60 mi:** +$1.50/mi |
-| **Route Delivery** | $49.99 base + **$19.00 per stop** + mileage overage on farthest stop |
-| **Add-ons** | Rush +$15 · Weekend +$20 · Overnight +$35 |
-| **Custom quote** | over 100 lb, appliance/furniture/oversized, or "Request Quote" → no instant checkout |
+| **Single — Standard (≤100 lb)** | 0–10 mi $39.99 · 11–20 $49.99 · 21–30 $59.99 · 31–40 $69.99 · 41–50 $79.99 · 51–60 $89.99 |
+| **Single — Heavy (101–200 lb)** | 0–10 mi $89.99 · 11–20 $99.99 · 21–30 $109.99 · 31–40 $119.99 · 41–50 $129.99 · 51–60 $139.99 |
+| **Mileage overage** | every mile **over 60** × $1.50 (single & route) |
+| **Route Delivery** | $49.99 base + **$19.00 per stop** + overage on the farthest stop |
+| **Add-ons** | Helper +$75 · Furniture dolly +$5 · Standard dolly +$5 · Foam/blanket wrap +$5/item · Rush +$15 · Overnight +$35 · Weekend +$20 (auto on Sat/Sun) |
+| **Vehicle** | Car / Compact cargo van / Sprinter van (no surcharge — used for the daily booking caps) |
+| **Custom quote** | over **200 lb**, appliance/furniture/oversized, or "Request Quote" → no instant checkout |
+
+**Delivery type** is Same-Day / Rush / Overnight / Scheduled (date picker). Every order
+needs **≥30 minutes'** dispatch lead time. **Vehicle daily caps** (Car 25, Compact cargo
+van 20, Sprinter van 25) are enforced server-side — a full day rolls to the next available
+day with a "bookings are full" note. Service is **dispatched once payment is received**.
 
 The booking form (`booking.html` + `assets/js/booking.js`) supports Single vs Route
 (up to 9 stops), shows a live price breakdown, and hands off to **Stripe Checkout**.
@@ -89,14 +105,30 @@ Stripe Checkout Session, and on payment emails dispatch + creates the Shipday de
 Until those are set, the booking form runs in **demo mode** — it shows the exact order +
 total and tells the customer to call, instead of charging a card.
 
-### Mileage
-With `GOOGLE_MAPS_API_KEY` set, the server recomputes miles from the real addresses via the
-Distance Matrix API (authoritative). Without it, the customer-entered "Distance (miles)"
-field drives pricing.
+### Mileage (automatic)
+The customer never types miles. The booking page calls **`POST /api/distance`** as soon as
+both addresses are entered. With `GOOGLE_MAPS_API_KEY` set, the server uses the Google
+**Distance Matrix API** (authoritative). Without a key it falls back to a keyless geocode
+(OpenStreetMap/Nominatim) + haversine estimate (×1.3 road factor) so the flow still works in
+demo. If the backend isn't reachable at all (pure static hosting), the browser does the same
+keyless geocode itself. Add a Google key for production accuracy.
+
+### Vehicle daily caps
+**`GET /api/availability?vehicle=&date=`** reports whether a day is full for a vehicle type
+and the next open day. On checkout the server re-checks authoritatively and rolls a full day
+to the next available date (Car 25/day, Compact cargo van 20/day, Sprinter van 25/day —
+editable in the admin **Services & Pricing** tab).
+
+### Email notifications
+On a paid order the webhook emails the **dispatch list** (`dispatch@mclogistics.delivery`,
+`mcdeliverypersonnel24.7@gmail.com`) and a confirmation to the customer (`server/notify.js`,
+via nodemailer). Configure `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASS`,
+`MAIL_FROM`. Until set, it no-ops cleanly.
 
 ### Shipday
-Set `SHIPDAY_API_KEY` and every paid order auto-creates a Shipday delivery (customer,
-pickup, drop-off/stops, weight, instructions, total, Stripe ID) for dispatch + tracking.
+Set `SHIPDAY_API_KEY` and every paid order auto-creates a Shipday delivery (`server/shipday.js`:
+customer, pickup, drop-off/stops, date/time, weight, instructions, total, Stripe ID) for
+dispatch + tracking. Until set, it no-ops cleanly.
 
 > **Note on WordPress:** the original brief targets the WordPress site. This repo implements
 > the same system natively. To do it inside WordPress instead, replicate the pricing table
@@ -158,7 +190,7 @@ Twitter Card tags, and **JSON-LD `LocalBusiness` structured data** (name, phones
 area served, opening hours). A `sitemap.xml` and `robots.txt` are included.
 
 > ⚠️ The canonical/OG/sitemap URLs use the placeholder domain
-> `https://www.mclogistics-fl.com`. **Find-and-replace it with your real domain** before
+> `https://mclogistics.delivery`. **Find-and-replace it with your real domain** before
 > going live (it appears in each page's `<head>`, `sitemap.xml`, and `robots.txt`).
 
 ## 📞 Business details

@@ -989,3 +989,22 @@ html, body{ overflow-x:hidden; }
   }
   .nav__links .nav__book-m a::after{ display:none; }
 }
+
+/* ===== Booking: auto-distance readout, hints, lead-time note ===== */
+.field-hint{ display:block; margin-top:6px; font-size:.78rem; font-weight:600; color:var(--slate); }
+.dist-readout{ display:flex; align-items:center; gap:10px; margin:14px 0 4px; padding:12px 14px;
+  background:var(--bg-soft); border:1px dashed var(--line); border-radius:10px; font-size:.9rem; font-weight:600; color:var(--ink); }
+.dist-readout svg{ width:18px; height:18px; flex:0 0 18px; color:var(--red); }
+.dist-readout.is-loading{ color:var(--slate); }
+.dist-readout.is-ready{ border-style:solid; border-color:var(--red-soft); background:var(--red-soft); color:var(--red-dark); }
+.lead-note{ font-size:.82rem; color:var(--slate); font-weight:600; margin:10px 0 4px; display:flex; gap:6px; align-items:flex-start; }
+.pay-policy{ font-size:.82rem; color:#c4c9d0; text-align:center; margin-top:10px; font-weight:600; }
+
+/* ===== Testimonials: real review screenshots ===== */
+.shot-grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:24px; }
+.review-shot{ margin:0; background:#fff; border:1px solid var(--line); border-radius:var(--radius); overflow:hidden; box-shadow:var(--shadow-sm); transition:var(--t); }
+.review-shot:hover{ transform:translateY(-4px); box-shadow:var(--shadow); }
+.review-shot img{ display:block; width:100%; height:auto; border-bottom:1px solid var(--line); background:#f5f6f8; }
+.review-shot figcaption{ padding:16px 18px; font-size:.92rem; color:var(--ink); font-style:italic; line-height:1.5; }
+.review-shot figcaption b{ font-style:normal; color:var(--red); }
+.review-shot .src{ display:block; margin-top:8px; font-style:normal; font-size:.75rem; font-weight:700; letter-spacing:.04em; text-transform:uppercase; color:var(--slate); }
