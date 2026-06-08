@@ -1,4 +1,7 @@
-# Local-dev Express server (Vercel uses /api functions instead)
-server/
+# The /api serverless function requires ../server/app, so the server *.js modules
+# MUST be included. Only exclude local-dev-only files.
+server/node_modules/
+server/.env
+server/data.json
 node_modules/
 *.log
