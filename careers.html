@@ -247,6 +247,7 @@
       var v = function (n) { var el = form.querySelector('[name="' + n + '"]'); return el ? el.value.trim() : ""; };
       var payload = {
         name: v("name"), email: v("email"), phone: v("phone"),
+        kind: "career", position: v("position"),
         message: "CAREER APPLICATION — Position: " + v("position") + " · Vehicle: " + v("vehicle") + "\n\n" + v("message")
       };
       var note = form.querySelector("[data-form-note]");

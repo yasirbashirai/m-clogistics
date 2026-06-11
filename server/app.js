@@ -195,10 +195,16 @@ app.post("/api/quote-request", async (req, res) => {
   res.json({ received: true, reference: rec.id });
 });
 
-// Public contact form
+// Public contact form (also used by the careers application form)
 app.post("/api/contact", async (req, res) => {
   const b = req.body || {};
-  const rec = await store.addColl("submissions", { name: b.name, email: b.email, phone: b.phone, message: b.message, status: "new" }, "S");
+  const rec = await store.addColl("submissions", { name: b.name, email: b.email, phone: b.phone, message: b.message, position: b.position || null, kind: b.kind || "contact", status: "new" }, "S");
+  // Email dispatch (best-effort — no-ops cleanly until SMTP_* env vars are set).
+  try {
+    const settings = await store.getConfig("settings");
+    const dispatchEmails = (settings && settings.dispatchEmails) || ["dispatch@mclogistics.delivery", "mcdeliverypersonnel24.7@gmail.com"];
+    await notify.notifyContact({ ...rec, ...b }, dispatchEmails);
+  } catch (_) { /* email best-effort */ }
   res.json({ received: true, reference: rec.id });
 });
 

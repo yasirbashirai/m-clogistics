@@ -19,6 +19,7 @@ const DEFAULT_P = {
   addons: { helper: 75, furnitureDolly: 5, standardDolly: 5, rush: 15, overnight: 35, weekend: 20 },
   addonLabels: { helper: "Helper", furnitureDolly: "Furniture dolly", standardDolly: "Standard dolly", rush: "Rush delivery", overnight: "Overnight delivery", weekend: "Weekend delivery" },
   foamWrapPerItem: 5,
+  outsideTriCountyMin: 89.99,
   vehicles: [
     { id: "car",          label: "Car",               surcharge: 0, dailyCap: 25 },
     { id: "compact_van",  label: "Compact cargo van", surcharge: 0, dailyCap: 20 },
@@ -102,6 +103,13 @@ function priceOrder(order, P) {
   }
 
   extraLines(P, order).forEach((l) => { lines.push(l); total += l.amount; });
+
+  // Out-of-area minimum: deliveries outside the tri-county area start at a floor price.
+  if (order.outsideTriCounty) {
+    const min = P.outsideTriCountyMin != null ? P.outsideTriCountyMin : 89.99;
+    if (total < min) { lines.push({ label: "Out-of-area minimum (outside tri-county)", amount: r2(min - total) }); total = min; }
+  }
+
   return { custom: false, lines, total: r2(total) };
 }
 

@@ -73,4 +73,33 @@ async function notifyPaidOrder(order, dispatchEmails) {
   return { sent: true };
 }
 
-module.exports = { notifyPaidOrder, orderLines };
+// Email dispatch when a contact form or careers application comes in.
+async function notifyContact(sub, dispatchEmails) {
+  const t = transport();
+  if (!t) return { sent: false, reason: "smtp_not_configured" };
+  const from = process.env.MAIL_FROM || "M&C Logistics <dispatch@mclogistics.delivery>";
+  const kind = sub.kind === "career" ? "career application" : "contact message";
+  const body = [
+    `New ${kind} from the website:`,
+    "",
+    `Reference: ${sub.id || "-"}`,
+    `Name: ${sub.name || "-"}`,
+    `Email: ${sub.email || "-"}`,
+    `Phone: ${sub.phone || "-"}`,
+    sub.position ? `Position: ${sub.position}` : null,
+    "",
+    "Message:",
+    sub.message || "(none)"
+  ].filter((l) => l !== null).join("\n");
+
+  await t.sendMail({
+    from,
+    replyTo: sub.email || undefined,
+    to: (dispatchEmails && dispatchEmails.length ? dispatchEmails : ["dispatch@mclogistics.delivery", "mcdeliverypersonnel24.7@gmail.com"]).join(","),
+    subject: `New ${kind}${sub.name ? " — " + sub.name : ""}`,
+    text: body
+  });
+  return { sent: true };
+}
+
+module.exports = { notifyPaidOrder, notifyContact, orderLines };

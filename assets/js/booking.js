@@ -200,6 +200,7 @@
       foamWrapItems: $("bkFoam").value,
       vehicle: $("bkVehicle").value,
       oversized: $("bkOversized").checked,
+      outsideTriCounty: $("bkOutsideTriCounty").checked,
       requestQuote: $("bkRequestQuote").checked
     };
     if (svc === "route") {
@@ -301,6 +302,7 @@
       distanceSource: distSource,
       weight: svc === "single" ? (Number($("bkWeightSingle").value) || 0) : (Number($("bkWeightRoute").value) || 0),
       vehicle: $("bkVehicle").value,
+      outsideTriCounty: $("bkOutsideTriCounty").checked,
       requestedDate: effectiveDate(),
       date: timing === "scheduled" ? $("bkDate").value : "",
       time: timing === "scheduled" ? $("bkTime").value : "",

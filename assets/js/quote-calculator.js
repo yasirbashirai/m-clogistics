@@ -38,6 +38,7 @@
       weekend:        { amount: 20, label: "Weekend delivery" }
     },
     foamWrapPerItem: 5,        // $ per foam/blanket-wrapped item
+    outsideTriCountyMin: 89.99, // deliveries outside Miami-Dade/Broward/Palm Beach start here
     vehicles: [
       { id: "car",          label: "Car",               surcharge: 0, dailyCap: 25 },
       { id: "compact_van",  label: "Compact cargo van", surcharge: 0, dailyCap: 20 },
@@ -95,6 +96,18 @@
     return out;
   }
 
+  // Deliveries outside the tri-county area have a minimum charge. If the computed
+  // total is below it, add a line to bring it up to the out-of-area minimum.
+  function applyOutOfAreaFloor(input, lines, total) {
+    if (!input.outsideTriCounty) return total;
+    var min = P.outsideTriCountyMin;
+    if (total < min) {
+      lines.push({ label: "Out-of-area minimum (outside tri-county)", amount: r2(min - total) });
+      return min;
+    }
+    return total;
+  }
+
   function customResult(reason, service) {
     return { custom: true, reason: reason, service: service || "Custom", lines: [], total: null };
   }
@@ -112,6 +125,7 @@
     var d = distanceLine(wc, miles);
     var lines = d.lines.slice(), total = d.total;
     extraLines(input).forEach(function (l) { lines.push(l); total += l.amount; });
+    total = applyOutOfAreaFloor(input, lines, total);
 
     return { custom: false, service: "Single Delivery", weightClass: wc.label, miles: miles, lines: lines, total: r2(total) };
   }
@@ -147,6 +161,7 @@
     }
 
     extraLines(input).forEach(function (l) { lines.push(l); total += l.amount; });
+    total = applyOutOfAreaFloor(input, lines, total);
 
     return { custom: false, service: "Route Delivery", stops: stops, farthestMiles: farthest, lines: lines, total: r2(total) };
   }
