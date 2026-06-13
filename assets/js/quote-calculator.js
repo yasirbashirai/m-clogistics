@@ -3,13 +3,14 @@
    Implements the revised M&C pricing spec:
      • Single Delivery — weight-class distance tiers + mileage overage
          – Standard   (≤100 lb): 0–10 mi $39.99 … +$10/band up to 60 mi
-         – Heavy   (101–200 lb): 0–10 mi $89.99 … +$10/band up to 60 mi
+         – Heavy   (101–200 lb): same in-area tiers as Standard. The $89.99
+             rate applies only to deliveries outside the service area.
          – over 200 lb / appliance / oversized / "Request Quote" => custom quote
      • Route Delivery  — base fee + per-stop fee + farthest-stop mileage overage
      • Mileage overage — every mile over 60 × $1.50
      • Add-ons — Helper $75, Furniture dolly $5, Standard dolly $5,
                  Foam-wrap $5/item, Rush $15, Overnight $35, Weekend $20
-     • Vehicle type — Car / Compact cargo van / Sprinter van (no surcharge;
+     • Vehicle type — Car / Compact cargo van / Sprinter van / Box truck (no surcharge;
                  used for the per-day booking caps enforced server-side)
    Pricing numbers are NEVER trusted from the browser — the Stripe charge is
    recomputed server-side (see /server/pricing.js, kept in sync with this file).
@@ -23,7 +24,7 @@
     bands: [10, 20, 30, 40, 50, 60],
     weightClasses: [
       { maxWeight: 100, label: "Standard (≤100 lb)", tiers: [39.99, 49.99, 59.99, 69.99, 79.99, 89.99] },
-      { maxWeight: 200, label: "Heavy (101–200 lb)", tiers: [89.99, 99.99, 109.99, 119.99, 129.99, 139.99] }
+      { maxWeight: 200, label: "Heavy (101–200 lb)", tiers: [39.99, 49.99, 59.99, 69.99, 79.99, 89.99] }
     ],
     maxWeight: 200,            // over this => custom quote (no instant checkout)
     overageStartMiles: 60,
@@ -42,7 +43,8 @@
     vehicles: [
       { id: "car",          label: "Car",               surcharge: 0, dailyCap: 25 },
       { id: "compact_van",  label: "Compact cargo van", surcharge: 0, dailyCap: 20 },
-      { id: "sprinter_van", label: "Sprinter van",      surcharge: 0, dailyCap: 25 }
+      { id: "sprinter_van", label: "Sprinter van",      surcharge: 0, dailyCap: 25 },
+      { id: "box_truck",    label: "Box truck",         surcharge: 0, dailyCap: 10 }
     ],
     dispatchLeadMinutes: 30,   // every order needs ≥30 min before a driver is dispatched
     gasPerGallon: 4.10         // assumption baked into the distance pricing model
@@ -71,7 +73,7 @@
       total += wc.tiers[idx];
     } else {
       var basePrice = wc.tiers[wc.tiers.length - 1];   // 51–60 band price
-      lines.push({ label: "Distance (0–60 mi base)", amount: basePrice });
+      lines.push({ label: "Distance", amount: basePrice });
       total += basePrice;
       var extra = Math.round(m - P.overageStartMiles);
       var over = r2(extra * P.overagePerMile);

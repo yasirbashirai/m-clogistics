@@ -30,7 +30,7 @@ const DEFAULTS = {
     bands: [10, 20, 30, 40, 50, 60],
     weightClasses: [
       { maxWeight: 100, label: "Standard (≤100 lb)", tiers: [39.99, 49.99, 59.99, 69.99, 79.99, 89.99] },
-      { maxWeight: 200, label: "Heavy (101–200 lb)", tiers: [89.99, 99.99, 109.99, 119.99, 129.99, 139.99] }
+      { maxWeight: 200, label: "Heavy (101–200 lb)", tiers: [39.99, 49.99, 59.99, 69.99, 79.99, 89.99] }
     ],
     maxWeight: 200,
     overageStartMiles: 60, overagePerMile: 1.5,
@@ -41,7 +41,8 @@ const DEFAULTS = {
     vehicles: [
       { id: "car",          label: "Car",               surcharge: 0, dailyCap: 25 },
       { id: "compact_van",  label: "Compact cargo van", surcharge: 0, dailyCap: 20 },
-      { id: "sprinter_van", label: "Sprinter van",      surcharge: 0, dailyCap: 25 }
+      { id: "sprinter_van", label: "Sprinter van",      surcharge: 0, dailyCap: 25 },
+      { id: "box_truck",    label: "Box truck",         surcharge: 0, dailyCap: 10 }
     ],
     dispatchLeadMinutes: 30
   }

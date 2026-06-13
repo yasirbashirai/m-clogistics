@@ -10,7 +10,7 @@ const DEFAULT_P = {
   bands: [10, 20, 30, 40, 50, 60],
   weightClasses: [
     { maxWeight: 100, label: "Standard (≤100 lb)", tiers: [39.99, 49.99, 59.99, 69.99, 79.99, 89.99] },
-    { maxWeight: 200, label: "Heavy (101–200 lb)", tiers: [89.99, 99.99, 109.99, 119.99, 129.99, 139.99] }
+    { maxWeight: 200, label: "Heavy (101–200 lb)", tiers: [39.99, 49.99, 59.99, 69.99, 79.99, 89.99] }
   ],
   maxWeight: 200,
   overageStartMiles: 60,
@@ -23,7 +23,8 @@ const DEFAULT_P = {
   vehicles: [
     { id: "car",          label: "Car",               surcharge: 0, dailyCap: 25 },
     { id: "compact_van",  label: "Compact cargo van", surcharge: 0, dailyCap: 20 },
-    { id: "sprinter_van", label: "Sprinter van",      surcharge: 0, dailyCap: 25 }
+    { id: "sprinter_van", label: "Sprinter van",      surcharge: 0, dailyCap: 25 },
+    { id: "box_truck",    label: "Box truck",         surcharge: 0, dailyCap: 10 }
   ],
   dispatchLeadMinutes: 30
 };
@@ -46,7 +47,7 @@ function distanceLines(P, wc, miles) {
     total += wc.tiers[idx];
   } else {
     const base = wc.tiers[wc.tiers.length - 1];
-    lines.push({ label: "Distance (0–60 mi base)", amount: base });
+    lines.push({ label: "Distance", amount: base });
     total += base;
     const extra = Math.round(m - P.overageStartMiles);
     const over = r2(extra * P.overagePerMile);
