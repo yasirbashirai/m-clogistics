@@ -76,7 +76,7 @@ async function resolveDay(P, vehicle, date) {
 async function fulfillPaidOrder(order) {
   const settings = await store.getConfig("settings");
   const dispatchEmails = (settings && settings.dispatchEmails) || ["dispatch@mclogistics.delivery", "mcdeliverypersonnel24.7@gmail.com"];
-  try { await notify.notifyPaidOrder(order, dispatchEmails); } catch (_) { /* email best-effort */ }
+  try { await notify.notifyPaidOrder(order, dispatchEmails, settings && settings.smtp); } catch (_) { /* email best-effort */ }
   try {
     const sd = await shipday.createShipdayOrder(order);
     if (sd && sd.created) await store.updateColl("orders", order.id, { shipdayId: (sd.data && (sd.data.orderId || sd.data.id)) || true });
@@ -199,11 +199,11 @@ app.post("/api/quote-request", async (req, res) => {
 app.post("/api/contact", async (req, res) => {
   const b = req.body || {};
   const rec = await store.addColl("submissions", { name: b.name, email: b.email, phone: b.phone, message: b.message, position: b.position || null, kind: b.kind || "contact", status: "new" }, "S");
-  // Email dispatch (best-effort — no-ops cleanly until SMTP_* env vars are set).
+  // Email dispatch (best-effort — no-ops cleanly until SMTP is configured via env or dashboard).
   try {
     const settings = await store.getConfig("settings");
     const dispatchEmails = (settings && settings.dispatchEmails) || ["dispatch@mclogistics.delivery", "mcdeliverypersonnel24.7@gmail.com"];
-    await notify.notifyContact({ ...rec, ...b }, dispatchEmails);
+    await notify.notifyContact({ ...rec, ...b }, dispatchEmails, settings && settings.smtp);
   } catch (_) { /* email best-effort */ }
   res.json({ received: true, reference: rec.id });
 });
@@ -277,15 +277,18 @@ app.get("/api/admin/settings", async (req, res) => {
   const s = JSON.parse(JSON.stringify(await store.getConfig("settings")));
   if (s.payments) { s.payments.stripeSecretKeySet = !!s.payments.stripeSecretKey || !!process.env.STRIPE_SECRET_KEY; delete s.payments.stripeSecretKey; }
   s.payments && (s.payments.envSecret = !!process.env.STRIPE_SECRET_KEY);
+  if (s.smtp) { s.smtp.passSet = !!s.smtp.pass || !!process.env.SMTP_PASS; delete s.smtp.pass; }
   res.json({ settings: s });
 });
 app.put("/api/admin/settings", async (req, res) => {
   const body = req.body || {};
   // don't wipe a stored secret with an empty field
   if (body.payments && (body.payments.stripeSecretKey === "" || body.payments.stripeSecretKey == null)) delete body.payments.stripeSecretKey;
+  if (body.smtp && (body.smtp.pass === "" || body.smtp.pass == null)) delete body.smtp.pass;
   const merged = await store.setConfig("settings", deepMerge(await store.getConfig("settings"), body));
   const out = JSON.parse(JSON.stringify(merged));
   if (out.payments) { out.payments.stripeSecretKeySet = !!out.payments.stripeSecretKey; delete out.payments.stripeSecretKey; }
+  if (out.smtp) { out.smtp.passSet = !!out.smtp.pass; delete out.smtp.pass; }
   res.json({ settings: out });
 });
 

@@ -276,7 +276,7 @@
 
   /* ---------- SETTINGS ---------- */
   function renderSettings(m){
-    var s=state.settings, pay=s.payments||{}, intg=s.integrations||{}, biz=s.business||{};
+    var s=state.settings, pay=s.payments||{}, intg=s.integrations||{}, biz=s.business||{}, smtp=s.smtp||{};
     m.innerHTML='<div class="adm-h"><h1>Settings</h1></div>'+
       '<div class="card2"><h3>💳 Payment gateway</h3>'+
         '<div class="grid2" style="margin-top:12px">'+
@@ -292,7 +292,18 @@
         '<div class="field"><label>Shipday API key</label><input id="s_shipday" type="password" placeholder="'+(intg.shipdaySet?"•••••• stored":"Basic …")+'"></div>'+
         '<div class="field"><label>Google Maps API key</label><input id="s_gmaps" type="password" placeholder="'+(intg.gmapsSet?"•••••• stored":"AIza…")+'"></div>'+
         '</div>'+
-        '<div class="grid3" style="margin-top:6px">'+fld("SMTP host","s_smtphost",biz.smtpHost||"")+fld("SMTP user","s_smtpuser",intg.smtpUser||"")+'<div class="field"><label>SMTP pass</label><input id="s_smtppass" type="password" placeholder="••••"></div></div>'+
+        '<h4 style="margin-top:16px">✉️ Email notifications (SMTP)</h4>'+
+        '<p class="muted">New bookings and contact/careers submissions are emailed to the dispatch addresses below. For Gmail, use an <b>App Password</b> (not your normal password).</p>'+
+        '<div class="grid3" style="margin-top:6px">'+
+          fld("SMTP host","s_smtphost",smtp.host||"")+
+          '<div class="field"><label>SMTP port</label><input id="s_smtpport" value="'+esc(smtp.port||"587")+'" placeholder="587"></div>'+
+          '<div class="field"><label>Secure</label><select id="s_smtpsecure"><option value="false" '+(smtp.secure?"":"selected")+'>No — STARTTLS (587)</option><option value="true" '+(smtp.secure?"selected":"")+'>Yes — SSL (465)</option></select></div>'+
+        '</div>'+
+        '<div class="grid2" style="margin-top:6px">'+
+          fld("SMTP user","s_smtpuser",smtp.user||"")+
+          '<div class="field"><label>SMTP password '+(smtp.passSet?'<span class="muted">— set ✓ (leave blank to keep)</span>':'')+'</label><input id="s_smtppass" type="password" placeholder="'+(smtp.passSet?"•••••• stored":"App password")+'"></div>'+
+        '</div>'+
+        '<div class="field" style="margin-top:6px"><label>From address</label><input id="s_mailfrom" value="'+esc(smtp.from||"")+'" placeholder="M&amp;C Logistics &lt;dispatch@mclogistics.delivery&gt;"></div>'+
       '</div>'+
       '<div class="card2"><h3>🏢 Business info</h3><div class="grid2" style="margin-top:12px">'+
         fld("Business name","b_name",biz.name)+fld("Phone 1","b_p1",biz.phone1)+fld("Phone 2","b_p2",biz.phone2)+fld("Email","b_email",biz.email)+fld("Address","b_addr",biz.address)+fld("Hours","b_hours",biz.hours)+'</div>'+
@@ -306,7 +317,10 @@
       if(val("s_secret")) body.payments.stripeSecretKey=val("s_secret");
       if(val("s_shipday")) body.integrations.shipdayKey=val("s_shipday");
       if(val("s_gmaps")) body.integrations.gmapsKey=val("s_gmaps");
-      if(val("s_smtphost")) body.business.smtpHost=val("s_smtphost");
+      // Email (SMTP) — save host/port/secure/user/from always; only set password when re-entered.
+      body.smtp={ host:val("s_smtphost"), port:Number(val("s_smtpport"))||587,
+        secure:val("s_smtpsecure")==="true", user:val("s_smtpuser"), from:val("s_mailfrom") };
+      if(val("s_smtppass")) body.smtp.pass=val("s_smtppass");
       send("PUT","/api/admin/settings",body).then(function(d){ state.settings=d.settings; toast("Settings saved"); });
     });
   }

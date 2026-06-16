@@ -1,20 +1,35 @@
 /* ==========================================================================
    M&C Logistics — email notifications (nodemailer).
    On a paid order: emails the dispatch team + a confirmation to the customer.
-   No-ops cleanly (returns {sent:false}) until SMTP_* env vars are configured.
-     SMTP_HOST, SMTP_PORT, SMTP_SECURE, SMTP_USER, SMTP_PASS, MAIL_FROM
+   On a contact/careers submission: emails the dispatch team.
+   SMTP config comes from the admin dashboard (settings.smtp), so the client can
+   enable email themselves — or from SMTP_* env vars, which take priority.
+   No-ops cleanly (returns {sent:false}) until SMTP is configured either way.
+     env: SMTP_HOST, SMTP_PORT, SMTP_SECURE, SMTP_USER, SMTP_PASS, MAIL_FROM
+     dashboard: settings.smtp = { host, port, secure, user, pass, from }
    ========================================================================== */
 "use strict";
 const nodemailer = require("nodemailer");
 
-function transport() {
-  if (!process.env.SMTP_HOST) return null;
+// Build a transport from env (preferred) or the dashboard-saved smtp settings.
+function transport(smtp) {
+  smtp = smtp || {};
+  const host = process.env.SMTP_HOST || smtp.host;
+  if (!host) return null;
+  const user = process.env.SMTP_USER || smtp.user;
+  const pass = process.env.SMTP_PASS || smtp.pass;
+  const secure = process.env.SMTP_SECURE != null
+    ? String(process.env.SMTP_SECURE) === "true"
+    : !!smtp.secure;
   return nodemailer.createTransport({
-    host: process.env.SMTP_HOST,
-    port: Number(process.env.SMTP_PORT) || 587,
-    secure: String(process.env.SMTP_SECURE) === "true",
-    auth: process.env.SMTP_USER ? { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS } : undefined
+    host,
+    port: Number(process.env.SMTP_PORT || smtp.port) || 587,
+    secure,
+    auth: user ? { user, pass } : undefined
   });
+}
+function mailFrom(smtp) {
+  return process.env.MAIL_FROM || (smtp && smtp.from) || "M&C Logistics <dispatch@mclogistics.delivery>";
 }
 
 const money = (n) => "$" + (Math.round((Number(n) || 0) * 100) / 100).toFixed(2);
@@ -45,10 +60,10 @@ function orderLines(o) {
   ].filter(Boolean);
 }
 
-async function notifyPaidOrder(order, dispatchEmails) {
-  const t = transport();
+async function notifyPaidOrder(order, dispatchEmails, smtp) {
+  const t = transport(smtp);
   if (!t) return { sent: false, reason: "smtp_not_configured" };
-  const from = process.env.MAIL_FROM || "M&C Logistics <dispatch@mclogistics.delivery>";
+  const from = mailFrom(smtp);
   const body = orderLines(order).join("\n");
 
   // 1) Dispatch / admin
@@ -74,10 +89,10 @@ async function notifyPaidOrder(order, dispatchEmails) {
 }
 
 // Email dispatch when a contact form or careers application comes in.
-async function notifyContact(sub, dispatchEmails) {
-  const t = transport();
+async function notifyContact(sub, dispatchEmails, smtp) {
+  const t = transport(smtp);
   if (!t) return { sent: false, reason: "smtp_not_configured" };
-  const from = process.env.MAIL_FROM || "M&C Logistics <dispatch@mclogistics.delivery>";
+  const from = mailFrom(smtp);
   const kind = sub.kind === "career" ? "career application" : "contact message";
   const body = [
     `New ${kind} from the website:`,

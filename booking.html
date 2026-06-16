@@ -311,10 +311,12 @@
 <!-- ==== M&C checkout configuration (fill these in to go live) ==== -->
 <script>
   window.MC_CONFIG = {
-    // Your Stripe PUBLISHABLE key (pk_live_… or pk_test_). Add this in Vercel-deployed
-    // index/booking or here once you connect Stripe. Leave blank to stay in demo mode.
+    // Stripe PUBLISHABLE key (pk_live_… / pk_test_). Leave blank — it is loaded
+    // automatically from the admin dashboard via /api/config (Settings → Payment
+    // gateway). The client just pastes their keys there; no code edit needed.
     stripePublishableKey: "",
     // Same-origin Vercel serverless functions (see /api). No CORS, no separate host.
+    configEndpoint: "/api/config",            // live publishable key + pricing from the dashboard
     checkoutEndpoint: "/api/create-checkout-session",
     quoteEndpoint: "/api/quote-request",
     distanceEndpoint: "/api/distance",        // auto-mileage (Google DM if key set, else geocode fallback)

@@ -20,6 +20,22 @@
   var MQ = window.MCQuote, fmt = MQ.fmt, P = MQ.P;
   var $ = function (id) { return document.getElementById(id); };
 
+  // Pull live config from the backend so the page goes live the moment the
+  // client saves their Stripe publishable key (and any pricing edits) in the
+  // admin dashboard — no code change/redeploy needed. The secret key stays
+  // server-side; the charge is always recomputed server-side from saved pricing.
+  (function loadConfig() {
+    var ep = CFG.configEndpoint || "/api/config";
+    fetch(ep).then(function (r) { return r.json(); }).then(function (cfg) {
+      if (!cfg) return;
+      if (cfg.stripePublishableKey) CFG.stripePublishableKey = cfg.stripePublishableKey;
+      // Sync displayed pricing with the dashboard (server still recomputes the charge).
+      if (cfg.pricing && typeof cfg.pricing === "object") {
+        try { Object.keys(cfg.pricing).forEach(function (k) { P[k] = cfg.pricing[k]; }); } catch (_) {}
+      }
+    }).catch(function () { /* offline / not configured — stays in demo mode */ });
+  })();
+
   var svc = "single";
   var miles = null;          // authoritative auto-distance (single drop-off / route farthest stop)
   var distSource = "";       // "google" | "server" | "estimate"
