@@ -40,6 +40,15 @@
     },
     foamWrapPerItem: 5,        // $ per foam/blanket-wrapped item
     outsideTriCountyMin: 89.99, // deliveries outside Miami-Dade/Broward/Palm Beach start here
+    // Box truck is flat-rated: $250 one-way / $500 round trip, ≤300 lb, within a 60-mi radius.
+    boxTruck: {
+      flatRate: 250,
+      roundTripRate: 500,
+      maxWeight: 300,
+      includedMiles: 60,
+      label: "Box truck — pickup & drop-off (≤300 lb, within 60 mi)",
+      roundTripLabel: "Box truck — round trip (≤300 lb, within 60 mi)"
+    },
     vehicles: [
       { id: "car",          label: "Car",               surcharge: 0, dailyCap: 25 },
       { id: "compact_van",  label: "Compact cargo van", surcharge: 0, dailyCap: 20 },
@@ -114,12 +123,37 @@
     return { custom: true, reason: reason, service: service || "Custom", lines: [], total: null };
   }
 
+  // ---- BOX TRUCK (flat rate) ----
+  // input: { miles, weight, roundTrip, addons, foamWrapItems, vehicle }
+  function boxTruckQuote(input) {
+    var bt = P.boxTruck;
+    var weight = Math.max(0, Number(input.weight) || 0);
+    if (weight > bt.maxWeight) return customResult("Box truck loads over " + bt.maxWeight + " lb require a custom quote.", "Box Truck");
+
+    var roundTrip = !!input.roundTrip;
+    var base = roundTrip ? bt.roundTripRate : bt.flatRate;
+    var lines = [{ label: roundTrip ? bt.roundTripLabel : bt.label, amount: base }];
+    var total = base;
+
+    var miles = Math.max(0, Number(input.miles) || 0);
+    if (miles > bt.includedMiles) {
+      var extra = Math.round(miles - bt.includedMiles);
+      var over = r2(extra * P.overagePerMile);
+      lines.push({ label: "Mileage surcharge (" + extra + " mi × $" + P.overagePerMile.toFixed(2) + ")", amount: over });
+      total += over;
+    }
+    extraLines(input).forEach(function (l) { lines.push(l); total += l.amount; });
+    return { custom: false, service: "Box Truck", miles: miles, roundTrip: roundTrip, lines: lines, total: r2(total) };
+  }
+
   // ---- SINGLE DELIVERY ----
-  // input: { miles, weight, addons, foamWrapItems, vehicle, oversized, requestQuote }
+  // input: { miles, weight, addons, foamWrapItems, vehicle, oversized, requestQuote, roundTrip }
   function singleQuote(input) {
     input = input || {};
     if (input.requestQuote) return customResult("You requested a custom quote.", "Single Delivery");
     if (input.oversized)    return customResult("Appliance, furniture, oversized or special-handling items are priced per job.", "Single Delivery");
+    // Box truck is flat-rated (pickup → drop-off, optional round trip) — not weight-band priced.
+    if (input.vehicle === "box_truck") return boxTruckQuote(input);
     var wc = weightClassFor(input.weight);
     if (!wc) return customResult("Deliveries over " + P.maxWeight + " lb require a custom quote.", "Single Delivery");
 

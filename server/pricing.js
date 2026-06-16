@@ -20,6 +20,16 @@ const DEFAULT_P = {
   addonLabels: { helper: "Helper", furnitureDolly: "Furniture dolly", standardDolly: "Standard dolly", rush: "Rush delivery", overnight: "Overnight delivery", weekend: "Weekend delivery" },
   foamWrapPerItem: 5,
   outsideTriCountyMin: 89.99,
+  // Box truck is flat-rated (not weight-band priced): $250 one-way / $500 round trip,
+  // for loads up to 300 lb within a 60-mile radius. Beyond 60 mi adds the mileage surcharge.
+  boxTruck: {
+    flatRate: 250,
+    roundTripRate: 500,
+    maxWeight: 300,
+    includedMiles: 60,
+    label: "Box truck — pickup & drop-off (≤300 lb, within 60 mi)",
+    roundTripLabel: "Box truck — round trip (≤300 lb, within 60 mi)"
+  },
   vehicles: [
     { id: "car",          label: "Car",               surcharge: 0, dailyCap: 25 },
     { id: "compact_van",  label: "Compact cargo van", surcharge: 0, dailyCap: 20 },
@@ -70,6 +80,32 @@ function extraLines(P, order) {
   return out;
 }
 
+// Box truck flat-rate quote — $250 one-way / $500 round trip (≤300 lb, within 60 mi),
+// plus the mileage surcharge beyond 60 mi and any selected add-ons.
+function boxTruckQuote(order, P) {
+  const bt = P.boxTruck || DEFAULT_P.boxTruck;
+  const weight = Math.max(0, Number(order.weight) || 0);
+  if (weight > bt.maxWeight) return { custom: true, reason: `Box truck loads over ${bt.maxWeight} lb require a custom quote.` };
+
+  const lines = [];
+  let total = 0;
+  const roundTrip = !!order.roundTrip;
+  const base = roundTrip ? bt.roundTripRate : bt.flatRate;
+  lines.push({ label: roundTrip ? bt.roundTripLabel : bt.label, amount: base });
+  total += base;
+
+  const miles = Math.max(0, Number(order.miles) || 0);
+  if (miles > bt.includedMiles) {
+    const extra = Math.round(miles - bt.includedMiles);
+    const over = r2(extra * P.overagePerMile);
+    lines.push({ label: `Mileage surcharge (${extra} mi × $${P.overagePerMile.toFixed(2)})`, amount: over });
+    total += over;
+  }
+
+  extraLines(P, order).forEach((l) => { lines.push(l); total += l.amount; });
+  return { custom: false, lines, total: r2(total) };
+}
+
 function priceOrder(order, P) {
   P = P || DEFAULT_P;
   // Forward-compatible: fill any missing config keys from the default.
@@ -79,6 +115,9 @@ function priceOrder(order, P) {
   const requestQuote = !!order.requestQuote || order.requestType === "Custom Quote";
   if (requestQuote) return { custom: true, reason: "Customer requested a custom quote." };
   if (oversized) return { custom: true, reason: "Oversized / special-handling item." };
+
+  // Box truck uses its own flat-rate model (single pickup → drop-off, optional round trip).
+  if (order.vehicle === "box_truck" && order.serviceType !== "Route Delivery") return boxTruckQuote(order, P);
 
   const lines = [];
   let total = 0;

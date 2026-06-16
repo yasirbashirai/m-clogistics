@@ -46,6 +46,7 @@ function orderLines(o) {
     o.serviceType === "Route Delivery"
       ? `Route stops (${o.numberOfStops}): ${stops.join(" | ")}`
       : `Delivery address: ${o.deliveryAddress}`,
+    o.roundTrip ? "Trip: Round trip (pickup → drop-off → return)" : null,
     `Delivery date/time: ${(o.date || o.requestedDate || "ASAP")} ${o.time || ""}`.trim(),
     o.rolledOver ? `NOTE: ${o.rollNote || "Rolled to next available day (chosen day was full)."}` : null,
     `Vehicle: ${o.vehicle || "-"}`,
@@ -117,4 +118,40 @@ async function notifyContact(sub, dispatchEmails, smtp) {
   return { sent: true };
 }
 
-module.exports = { notifyPaidOrder, notifyContact, orderLines };
+// Email dispatch when a customer submits a custom-quote request from the booking page.
+async function notifyQuoteRequest(order, dispatchEmails, smtp) {
+  const t = transport(smtp);
+  if (!t) return { sent: false, reason: "smtp_not_configured" };
+  const from = mailFrom(smtp);
+  const c = order.customer || {};
+  const stops = (order.stops || []).filter(Boolean);
+  const body = [
+    "New custom-quote request from the booking page (NOT yet paid):",
+    "",
+    `Reference: ${order.id || "-"}`,
+    `Service type: ${order.serviceType || "-"}`,
+    `Customer: ${c.name || "-"} · ${c.phone || "-"} · ${c.email || "-"}`,
+    `Pickup address: ${order.pickupAddress || "-"}`,
+    order.serviceType === "Route Delivery"
+      ? `Route stops (${order.numberOfStops || stops.length}): ${stops.join(" | ")}`
+      : `Delivery address: ${order.deliveryAddress || "-"}`,
+    order.roundTrip ? "Trip: Round trip" : null,
+    `Vehicle: ${order.vehicle || "-"}`,
+    `Package weight: ${order.weight != null ? order.weight + " lb" : "-"}`,
+    `Mileage: ${order.miles != null ? order.miles + " mi" : "-"}`,
+    order.instructions ? `Delivery notes: ${order.instructions}` : null,
+    "",
+    "Reply to the customer with a custom price."
+  ].filter((l) => l !== null).join("\n");
+
+  await t.sendMail({
+    from,
+    replyTo: c.email || undefined,
+    to: (dispatchEmails && dispatchEmails.length ? dispatchEmails : ["dispatch@mclogistics.delivery", "mcdeliverypersonnel24.7@gmail.com"]).join(","),
+    subject: `New custom-quote request${c.name ? " — " + c.name : ""}`,
+    text: body
+  });
+  return { sent: true };
+}
+
+module.exports = { notifyPaidOrder, notifyContact, notifyQuoteRequest, orderLines };

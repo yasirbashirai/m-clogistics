@@ -17,6 +17,17 @@ app.use(express.json({ limit: "1mb" }));
 
 const r2 = (n) => Math.round((n + Number.EPSILON) * 100) / 100;
 
+// Every dispatch/submission email must reach these two no matter how the admin
+// edits the recipient list — the gmail inbox and the dispatch alias are always included.
+const CANONICAL_DISPATCH = ["dispatch@mclogistics.delivery", "mcdeliverypersonnel24.7@gmail.com"];
+function dispatchRecipients(settings) {
+  const extra = (settings && Array.isArray(settings.dispatchEmails)) ? settings.dispatchEmails : [];
+  const seen = new Set();
+  return [...CANONICAL_DISPATCH, ...extra]
+    .map((e) => String(e || "").trim())
+    .filter((e) => e && !seen.has(e.toLowerCase()) && seen.add(e.toLowerCase()));
+}
+
 /* ---- distance (auto-mileage): Google Distance Matrix if a key is set,
         else a keyless geocode + haversine estimate (×1.3 road factor) ---- */
 async function computeMiles(from, to) {
@@ -73,9 +84,11 @@ async function resolveDay(P, vehicle, date) {
 }
 
 // Fulfill a paid order: email dispatch + customer, then create the Shipday delivery.
+// HARD RULE: never dispatch an unpaid order — this only runs once Stripe confirms payment.
 async function fulfillPaidOrder(order) {
+  if (!order || !order.paid) return; // safety net — unpaid orders are never dispatched
   const settings = await store.getConfig("settings");
-  const dispatchEmails = (settings && settings.dispatchEmails) || ["dispatch@mclogistics.delivery", "mcdeliverypersonnel24.7@gmail.com"];
+  const dispatchEmails = dispatchRecipients(settings);
   try { await notify.notifyPaidOrder(order, dispatchEmails, settings && settings.smtp); } catch (_) { /* email best-effort */ }
   try {
     const sd = await shipday.createShipdayOrder(order);
@@ -191,7 +204,13 @@ app.post("/api/webhook", async (req, res) => {
 
 // Public quote request
 app.post("/api/quote-request", async (req, res) => {
-  const rec = await store.addColl("quotes", { ...(req.body || {}), status: "new" }, "Q");
+  const b = req.body || {};
+  const rec = await store.addColl("quotes", { ...b, status: "new" }, "Q");
+  // Email dispatch so custom-quote requests never sit unseen (best-effort).
+  try {
+    const settings = await store.getConfig("settings");
+    await notify.notifyQuoteRequest({ ...b, id: rec.id }, dispatchRecipients(settings), settings && settings.smtp);
+  } catch (_) { /* email best-effort */ }
   res.json({ received: true, reference: rec.id });
 });
 
@@ -202,8 +221,7 @@ app.post("/api/contact", async (req, res) => {
   // Email dispatch (best-effort — no-ops cleanly until SMTP is configured via env or dashboard).
   try {
     const settings = await store.getConfig("settings");
-    const dispatchEmails = (settings && settings.dispatchEmails) || ["dispatch@mclogistics.delivery", "mcdeliverypersonnel24.7@gmail.com"];
-    await notify.notifyContact({ ...rec, ...b }, dispatchEmails, settings && settings.smtp);
+    await notify.notifyContact({ ...rec, ...b }, dispatchRecipients(settings), settings && settings.smtp);
   } catch (_) { /* email best-effort */ }
   res.json({ received: true, reference: rec.id });
 });

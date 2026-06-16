@@ -215,6 +215,7 @@
       addons: effectiveAddons(),
       foamWrapItems: $("bkFoam").value,
       vehicle: $("bkVehicle").value,
+      roundTrip: $("bkRoundTrip").checked,
       oversized: $("bkOversized").checked,
       outsideTriCounty: false, // out-of-area is handled manually — see the note on the form ("price may vary")
       requestQuote: $("bkRequestQuote").checked
@@ -259,8 +260,19 @@
 
   /* ------------------------------------------------- vehicle / availability */
   function setVehNote() {
-    var v = P.vehicles.find(function (x) { return x.id === $("bkVehicle").value; });
+    var id = $("bkVehicle").value;
+    var v = P.vehicles.find(function (x) { return x.id === id; });
     $("vehNote").textContent = v ? (v.label + " · up to " + v.dailyCap + " bookings per day") : "";
+    // Box truck: reveal the round-trip flat-rate options and allow loads up to 300 lb.
+    var isBox = id === "box_truck";
+    $("boxTruckOpts").style.display = isBox ? "" : "none";
+    if (!isBox) $("bkRoundTrip").checked = false;
+    var wEl = $("bkWeightSingle");
+    if (wEl) {
+      var cap = isBox && P.boxTruck ? P.boxTruck.maxWeight : 200;
+      wEl.max = cap;
+      if (Number(wEl.value) > cap) wEl.value = cap;
+    }
   }
   function checkAvailability() {
     rolledDate = null;
@@ -318,6 +330,7 @@
       distanceSource: distSource,
       weight: svc === "single" ? (Number($("bkWeightSingle").value) || 0) : (Number($("bkWeightRoute").value) || 0),
       vehicle: $("bkVehicle").value,
+      roundTrip: $("bkRoundTrip").checked,
       outsideTriCounty: false, // out-of-area is handled manually — see the note on the form ("price may vary")
       requestedDate: effectiveDate(),
       date: timing === "scheduled" ? $("bkDate").value : "",
