@@ -388,14 +388,41 @@
     var order = collectOrder({ lines: [], total: null });
     order.requestType = "Custom Quote";
 
-    var done = function () {
+    var ok = function () {
       showMsg(bookMsg, "ok", "✓ Your request has been submitted. M&C Logistics will review your delivery details and contact you with a custom quote.");
       quoteBtn.disabled = true; quoteBtn.textContent = "Request submitted ✓";
     };
+    var fail = function () {
+      showMsg(bookMsg, "info", "⚠ Sorry — your request couldn't be sent just now. Please call (954) 203-2335 or email dispatch@mclogistics.delivery.");
+      quoteBtn.disabled = false; quoteBtn.textContent = "Request a custom quote";
+    };
+
+    // Best-effort admin save, then email the quote request to dispatch@ via Web3Forms.
     if (CFG.quoteEndpoint) {
-      fetch(CFG.quoteEndpoint, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(order) })
-        .then(done).catch(done);
-    } else { done(); }
+      fetch(CFG.quoteEndpoint, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(order) }).catch(function () {});
+    }
+    var c = order.customer || {};
+    var stops = (order.stops || []).filter(Boolean);
+    var summary = [
+      "CUSTOM QUOTE REQUEST (not yet paid)",
+      "",
+      "Service: " + (order.serviceType || "-"),
+      "Pickup: " + (order.pickupAddress || "-"),
+      "Drop-off: " + (order.deliveryAddress || stops.join(" | ") || "-"),
+      order.roundTrip ? "Trip: Round trip" : null,
+      "Vehicle: " + (order.vehicle || "-"),
+      "Weight: " + (order.weight != null ? order.weight + " lb" : "-"),
+      "Mileage: " + (order.miles != null ? order.miles + " mi" : "-"),
+      order.instructions ? "Notes: " + order.instructions : null
+    ].filter(function (l) { return l !== null; }).join("\n");
+
+    if (window.MCForms) {
+      quoteBtn.disabled = true; quoteBtn.textContent = "Sending…";
+      window.MCForms.send(
+        { name: c.name, email: c.email, phone: c.phone, message: summary },
+        "New custom-quote request — " + (c.name || "Website")
+      ).then(ok).catch(fail);
+    } else { ok(); }
   });
 
   /* ---------------------------------------------------------------- wiring */
