@@ -97,9 +97,16 @@
   var $=function(id){return document.getElementById(id);};
   var state={};
 
-  // Talk to the SAME site that serves this admin page unless a full http(s) URL
-  // is explicitly given — prevents saves from silently going to a wrong/dead backend.
-  function api(p){ var base=(cfg.apiBase||"").trim(); if(base && !/^https?:\/\//i.test(base)) base=""; return base.replace(/\/$/,"") + p; }
+  // When this admin page is opened over the web, ALWAYS talk to the same site that
+  // serves it (ignore any leftover "API URL"). This makes it impossible for a stale
+  // URL to silently send saves to a wrong/dead backend. Only a local file:// copy
+  // honors an explicit http(s) API URL.
+  function api(p){
+    var local = location.protocol === "file:";
+    var base = local ? (cfg.apiBase||"").trim() : "";
+    if (base && !/^https?:\/\//i.test(base)) base = "";
+    return base.replace(/\/$/,"") + p;
+  }
   function H(){ return { "x-admin-token":cfg.token, "Content-Type":"application/json" }; }
   function esc(s){ return (s==null?"":String(s)).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c];}); }
   function money(n){ return n==null?"—":"$"+Number(n).toFixed(2); }
