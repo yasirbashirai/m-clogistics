@@ -97,7 +97,9 @@
   var $=function(id){return document.getElementById(id);};
   var state={};
 
-  function api(p){ return (cfg.apiBase||"").replace(/\/$/,"") + p; }
+  // Talk to the SAME site that serves this admin page unless a full http(s) URL
+  // is explicitly given — prevents saves from silently going to a wrong/dead backend.
+  function api(p){ var base=(cfg.apiBase||"").trim(); if(base && !/^https?:\/\//i.test(base)) base=""; return base.replace(/\/$/,"") + p; }
   function H(){ return { "x-admin-token":cfg.token, "Content-Type":"application/json" }; }
   function esc(s){ return (s==null?"":String(s)).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c];}); }
   function money(n){ return n==null?"—":"$"+Number(n).toFixed(2); }
@@ -108,7 +110,12 @@
   function showDash(){ $("loginView").style.display="none"; $("dashView").style.display=""; $("logoutBtn").style.display=""; }
 
   function get(p){ return fetch(api(p),{headers:H()}).then(function(r){ if(r.status===401) throw new Error("Invalid token."); if(!r.ok) throw new Error("Error "+r.status); return r.json(); }); }
-  function send(method,p,body){ return fetch(api(p),{method:method,headers:H(),body:body?JSON.stringify(body):undefined}).then(function(r){return r.json();}); }
+  function send(method,p,body){ return fetch(api(p),{method:method,headers:H(),body:body?JSON.stringify(body):undefined}).then(function(r){
+    return r.json().catch(function(){return {};}).then(function(j){
+      if(!r.ok || (j&&j.error)) throw new Error((j&&j.error)||("Save failed — HTTP "+r.status));
+      return j;
+    });
+  }); }
 
   $("loginBtn").addEventListener("click",function(){
     cfg={ apiBase:$("apiBase").value.trim(), token:$("adminToken").value.trim() };
@@ -321,7 +328,18 @@
       body.smtp={ host:val("s_smtphost"), port:Number(val("s_smtpport"))||587,
         secure:val("s_smtpsecure")==="true", user:val("s_smtpuser"), from:val("s_mailfrom") };
       if(val("s_smtppass")) body.smtp.pass=val("s_smtppass");
-      send("PUT","/api/admin/settings",body).then(function(d){ state.settings=d.settings; toast("Settings saved"); });
+      var sb=$("saveSettings"); sb.disabled=true; sb.textContent="Saving…";
+      send("PUT","/api/admin/settings",body).then(function(d){
+        state.settings=d.settings;
+        var pk=(d.settings&&d.settings.payments&&d.settings.payments.stripePublishableKey)||"";
+        var secSet=d.settings&&d.settings.payments&&d.settings.payments.stripeSecretKeySet;
+        // Verify what actually persisted, so a silent non-save can never look like success again.
+        if(body.payments.stripePublishableKey && !pk) toast("⚠ Saved, but the publishable key did NOT store. Try again.");
+        else if(val("s_secret") && !secSet) toast("⚠ Saved, but the secret key did NOT store. Try again.");
+        else toast("✓ Settings saved"+(pk?" — checkout key is live":""));
+      }).catch(function(e){
+        toast("⚠ NOT saved: "+e.message);
+      }).then(function(){ sb.disabled=false; sb.textContent="Save settings"; });
     });
   }
 
