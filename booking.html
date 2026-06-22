@@ -43,8 +43,7 @@
 }
 </script>
 <link rel="stylesheet" href="assets/css/styles.css">
-<!-- Stripe.js — used once the client's key + backend endpoint are added (see README) -->
-<script src="https://js.stripe.com/v3/"></script>
+<!-- Payments use Square hosted checkout (redirect) — no client-side SDK needed here. -->
 </head>
 <body data-page="booking">
 
@@ -206,10 +205,10 @@
 
           <button class="btn btn--primary btn--block btn--lg mt-3" id="payBtn">
             <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>
-            Pay Securely with Stripe
+            Pay Securely
           </button>
           <button class="btn btn--outline btn--block mt-2" id="quoteBtn" style="display:none">Submit Quote Request</button>
-          <p class="pay-note"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg> Secured by Stripe · 256-bit encryption</p>
+          <p class="pay-note"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg> Secured by Square · 256-bit encryption</p>
           <p class="pay-policy">Service is dispatched once payment is received.</p>
         </div>
 

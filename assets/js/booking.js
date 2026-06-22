@@ -28,6 +28,9 @@
     var ep = CFG.configEndpoint || "/api/config";
     fetch(ep).then(function (r) { return r.json(); }).then(function (cfg) {
       if (!cfg) return;
+      CFG.paymentProvider = cfg.paymentProvider || "square";
+      CFG.paymentsReady = !!cfg.paymentsReady;        // true once the gateway can take a live card
+      if (cfg.square) CFG.square = cfg.square;
       if (cfg.stripePublishableKey) CFG.stripePublishableKey = cfg.stripePublishableKey;
       // Sync displayed pricing with the dashboard (server still recomputes the charge).
       if (cfg.pricing && typeof cfg.pricing === "object") {
@@ -355,11 +358,11 @@
     if (res.custom) return;
     var order = collectOrder(res);
 
-    if (!CFG.checkoutEndpoint || !CFG.stripePublishableKey) {
+    if (!CFG.checkoutEndpoint || !CFG.paymentsReady) {
       var roll = rolledDate ? " (scheduled for " + humanDate(rolledDate) + " — chosen day is full)" : "";
       showMsg(bookMsg, "ok",
         "✓ Order ready — " + fmt(order.total) + " for " + order.serviceType + roll + ". " +
-        "Live card payment activates once the Stripe keys + backend are connected (see README). " +
+        "Live card payment activates once the payment gateway is connected. " +
         "Service is dispatched once payment is received. For help, email dispatch@mclogistics.delivery.");
       payBtn.disabled = true; payBtn.textContent = "Order captured ✓";
       return;
@@ -371,12 +374,13 @@
     })
       .then(function (r) { return r.json(); })
       .then(function (data) {
+        // Square (and legacy Stripe) both return a hosted-checkout URL to redirect to.
         if (data.url) { window.location.href = data.url; return; }
-        if (data.id && window.Stripe) { return window.Stripe(CFG.stripePublishableKey).redirectToCheckout({ sessionId: data.id }); }
-        throw new Error(data.error || "Could not start checkout.");
+        if (data.id && window.Stripe && CFG.stripePublishableKey) { return window.Stripe(CFG.stripePublishableKey).redirectToCheckout({ sessionId: data.id }); }
+        throw new Error(data.error === "payments_not_configured" ? "Online payment isn't connected yet — please call (954) 203-2335." : (data.error || "Could not start checkout."));
       })
       .catch(function (err) {
-        payBtn.disabled = false; payBtn.innerHTML = "Pay Securely with Stripe";
+        payBtn.disabled = false; payBtn.innerHTML = "Pay Securely";
         showMsg(bookMsg, "info", "Checkout error: " + err.message + " — please email dispatch@mclogistics.delivery.");
       });
   });

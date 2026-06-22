@@ -290,17 +290,30 @@
 
   /* ---------- SETTINGS ---------- */
   function renderSettings(m){
-    var s=state.settings, pay=s.payments||{}, intg=s.integrations||{}, biz=s.business||{}, smtp=s.smtp||{};
+    var s=state.settings, pay=s.payments||{}, intg=s.integrations||{}, biz=s.business||{}, smtp=s.smtp||{}, sq=pay.square||{};
     m.innerHTML='<div class="adm-h"><h1>Settings</h1></div>'+
       '<div class="card2"><h3>💳 Payment gateway</h3>'+
         '<div class="grid2" style="margin-top:12px">'+
-        '<div class="field"><label>Provider</label><select id="s_provider"><option value="stripe" '+(pay.provider==="stripe"?"selected":"")+'>Stripe</option></select></div>'+
+        '<div class="field"><label>Provider</label><select id="s_provider"><option value="square" '+(pay.provider!=="stripe"?"selected":"")+'>Square</option><option value="stripe" '+(pay.provider==="stripe"?"selected":"")+'>Stripe</option></select></div>'+
         '<div class="field"><label>Mode</label><select id="s_mode"><option value="test" '+(pay.mode==="test"?"selected":"")+'>Test</option><option value="live" '+(pay.mode==="live"?"selected":"")+'>Live</option></select></div>'+
         '</div>'+
+        '<h4 style="margin-top:8px">Square</h4>'+
+        '<div class="grid2">'+
+          '<div class="field"><label>Application ID</label><input id="s_sq_app" value="'+esc(sq.applicationId||"")+'" placeholder="sq0idp-…"></div>'+
+          '<div class="field"><label>Location ID</label><input id="s_sq_loc" value="'+esc(sq.locationId||"")+'" placeholder="L…"></div>'+
+        '</div>'+
+        '<div class="grid2">'+
+          '<div class="field"><label>Access token '+(sq.accessTokenSet?'<span class="muted">— set ✓ (leave blank to keep)</span>':'')+'</label><input id="s_sq_token" type="password" placeholder="'+(sq.accessTokenSet?"•••••• stored":"EAAA…")+'"></div>'+
+          '<div class="field"><label>Environment</label><select id="s_sq_env"><option value="production" '+(sq.env==="sandbox"?"":"selected")+'>Production</option><option value="sandbox" '+(sq.env==="sandbox"?"selected":"")+'>Sandbox</option></select></div>'+
+        '</div>'+
+        '<div class="field"><label>Webhook signature key '+(sq.webhookSignatureKeySet?'<span class="muted">— set ✓ (leave blank to keep)</span>':'')+'</label><input id="s_sq_sig" type="password" placeholder="'+(sq.webhookSignatureKeySet?"•••••• stored":"from Square → Webhooks")+'"></div>'+
+        '<p class="muted">Square webhook endpoint: <span class="code">/api/square-webhook</span> — add in Square Developer Dashboard → Webhooks (event <span class="code">payment.updated</span>), then paste the generated Signature Key above.</p>'+
+        '<details style="margin-top:10px"><summary class="muted">Stripe (legacy) settings</summary>'+
         '<div class="field"><label>Stripe publishable key (pk_…)</label><input id="s_pub" value="'+esc(pay.stripePublishableKey||"")+'" placeholder="pk_live_…"></div>'+
         '<div class="field"><label>Stripe secret key (sk_…) '+(pay.stripeSecretKeySet?'<span class="muted">— set ✓ (leave blank to keep)</span>':'')+'</label><input id="s_secret" type="password" placeholder="'+(pay.stripeSecretKeySet?"•••••• stored":"sk_live_…")+'"></div>'+
         (pay.envSecret?'<p class="muted">A secret key is also set via the host env var (recommended, takes priority).</p>':'')+
-        '<p class="muted">Webhook endpoint: <span class="code">/api/webhook</span> — add this in your Stripe dashboard (event checkout.session.completed).</p>'+
+        '<p class="muted">Stripe webhook endpoint: <span class="code">/api/webhook</span> (event checkout.session.completed).</p>'+
+        '</details>'+
       '</div>'+
       '<div class="card2"><h3>🔌 Integrations</h3><div class="grid2" style="margin-top:12px">'+
         '<div class="field"><label>Shipday API key</label><input id="s_shipday" type="password" placeholder="'+(intg.shipdaySet?"•••••• stored":"Basic …")+'"></div>'+
@@ -328,6 +341,9 @@
       var body={ payments:{ provider:$("s_provider").value, mode:$("s_mode").value, stripePublishableKey:$("s_pub").value },
         integrations:{}, business:{ name:val("b_name"),phone1:val("b_p1"),phone2:val("b_p2"),email:val("b_email"),address:val("b_addr"),hours:val("b_hours") },
         dispatchEmails:val("b_dispatch").split(",").map(function(x){return x.trim();}).filter(Boolean) };
+      body.payments.square={ applicationId:val("s_sq_app"), locationId:val("s_sq_loc"), env:$("s_sq_env").value };
+      if(val("s_sq_token")) body.payments.square.accessToken=val("s_sq_token");
+      if(val("s_sq_sig")) body.payments.square.webhookSignatureKey=val("s_sq_sig");
       if(val("s_secret")) body.payments.stripeSecretKey=val("s_secret");
       if(val("s_shipday")) body.integrations.shipdayKey=val("s_shipday");
       if(val("s_gmaps")) body.integrations.gmapsKey=val("s_gmaps");

@@ -22,7 +22,7 @@ const DEFAULTS = {
   settings: {
     business: { name: "M&C Logistics", phone1: "(954) 203-2335", phone2: "(954) 544-0359",
       email: "mcdeliverypersonnel24.7@gmail.com", address: "North Lauderdale, FL 33068", hours: "Open 7 Days · 7AM–7PM" },
-    payments: { provider: "stripe", mode: "test", stripePublishableKey: "", stripeSecretKeySet: false, stripeWebhookSet: false },
+    payments: { provider: "square", mode: "live", square: { applicationId: "", locationId: "", env: "production" }, stripePublishableKey: "" },
     integrations: { shipdayEnabled: false, googleMapsEnabled: false, smtpEnabled: false },
     dispatchEmails: ["dispatch@mclogistics.delivery", "mcdeliverypersonnel24.7@gmail.com"]
   },

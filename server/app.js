@@ -10,10 +10,12 @@ const store = require("./store");
 const { priceOrder } = require("./pricing");
 const notify = require("./notify");
 const shipday = require("./shipday");
+const square = require("./square");
 
 const app = express();
 app.use(cors({ origin: process.env.SITE_ORIGIN || "*" }));
-app.use(express.json({ limit: "1mb" }));
+// Capture the raw body so the Square webhook can verify its HMAC signature.
+app.use(express.json({ limit: "1mb", verify: (req, _res, buf) => { req.rawBody = buf; } }));
 
 const r2 = (n) => Math.round((n + Number.EPSILON) * 100) / 100;
 
@@ -91,7 +93,7 @@ async function fulfillPaidOrder(order) {
   const dispatchEmails = dispatchRecipients(settings);
   try { await notify.notifyPaidOrder(order, dispatchEmails, settings && settings.smtp); } catch (_) { /* email best-effort */ }
   try {
-    const sd = await shipday.createShipdayOrder(order);
+    const sd = await shipday.createShipdayOrder(order, settings);
     if (sd && sd.created) await store.updateColl("orders", order.id, { shipdayId: (sd.data && (sd.data.orderId || sd.data.id)) || true });
   } catch (_) { /* shipday best-effort */ }
 }
@@ -105,6 +107,18 @@ async function stripeKey() {
   const s = await store.getConfig("settings");
   return (s && s.payments && s.payments.stripeSecretKey) || "";
 }
+// Which gateway to charge with. Honors the admin "provider" choice, but auto-uses
+// whichever is actually configured so a half-set provider never blocks checkout.
+function resolveProvider(settings) {
+  const chosen = (settings && settings.payments && settings.payments.provider) || "";
+  const squareReady = square.isConfigured(settings);
+  const stripeReady = !!(process.env.STRIPE_SECRET_KEY || (settings && settings.payments && settings.payments.stripeSecretKey));
+  if (chosen === "square" && squareReady) return "square";
+  if (chosen === "stripe" && stripeReady) return "stripe";
+  if (squareReady) return "square";
+  if (stripeReady) return "stripe";
+  return chosen || "square";
+}
 
 /* ===================== PUBLIC ===================== */
 
@@ -112,7 +126,15 @@ async function stripeKey() {
 app.get("/api/config", async (req, res) => {
   const s = await store.getConfig("settings");
   const pricing = await store.getConfig("pricing");
+  const provider = resolveProvider(s);
+  const sq = square.squareConfig(s);
   res.json({
+    paymentProvider: provider,
+    // True once the active gateway can actually take a live card payment.
+    paymentsReady: provider === "square" ? square.isConfigured(s) : !!(process.env.STRIPE_SECRET_KEY || (s && s.payments && s.payments.stripeSecretKey)),
+    // Square public identifiers (safe to expose; the access token never leaves the server).
+    square: { applicationId: sq.applicationId || "", locationId: sq.locationId || "", environment: sq.production ? "production" : "sandbox" },
+    // Stripe publishable key kept for back-compat with the old flow.
     stripePublishableKey: (s && s.payments && s.payments.stripePublishableKey) || "",
     paymentsMode: (s && s.payments && s.payments.mode) || "test",
     pricing
@@ -167,11 +189,29 @@ app.post("/api/create-checkout-session", async (req, res) => {
 
     const rec = await store.addColl("orders", { ...order, breakdown: priced.lines, total: priced.total, status: "pending_payment", paid: false });
 
+    const settings = await store.getConfig("settings");
+    const origin = process.env.SITE_ORIGIN || (req.headers.origin || ("https://" + req.headers.host));
+    const provider = resolveProvider(settings);
+
+    // ---- Square (current gateway): hosted Payment Link, confirmed by webhook + re-fetch ----
+    if (provider === "square") {
+      const link = await square.createPaymentLink({ ...order, id: rec.id }, priced, {
+        settings, redirectUrl: origin + "/service-area.html?paid=1&code=" + rec.id
+      });
+      if (link.error) {
+        if (link.error === "square_not_configured")
+          return res.status(200).json({ error: "payments_not_configured", trackingCode: rec.id, total: priced.total, rolled });
+        return res.status(500).json({ error: link.error, trackingCode: rec.id });
+      }
+      await store.updateColl("orders", rec.id, { squareOrderId: link.orderId, squarePaymentLinkId: link.paymentLinkId, paymentProvider: "square" });
+      return res.json({ url: link.url, trackingCode: rec.id, rolled });
+    }
+
+    // ---- Stripe (legacy fallback) ----
     const key = await stripeKey();
-    if (!key) return res.status(200).json({ error: "stripe_not_configured", trackingCode: rec.id, total: priced.total, rolled });
+    if (!key) return res.status(200).json({ error: "payments_not_configured", trackingCode: rec.id, total: priced.total, rolled });
 
     const stripe = Stripe(key);
-    const origin = process.env.SITE_ORIGIN || (req.headers.origin || ("https://" + req.headers.host));
     const session = await stripe.checkout.sessions.create({
       mode: "payment", payment_method_types: ["card"],
       customer_email: order.customer && order.customer.email,
@@ -196,6 +236,44 @@ app.post("/api/webhook", async (req, res) => {
     const id = (s.metadata && s.metadata.orderId) || s.client_reference_id;
     if (id) {
       const updated = await store.updateColl("orders", id, { status: "paid", paid: true, amountPaid: (s.amount_total || 0) / 100, stripePaymentId: s.payment_intent || s.id });
+      if (updated) await fulfillPaidOrder(updated);   // email dispatch + customer, create Shipday delivery
+    }
+    res.json({ received: true });
+  } catch (e) { res.status(200).json({ received: true, error: e.message }); }
+});
+
+// Square webhook — fired on payment.created / payment.updated. We confirm the
+// payment authoritatively by re-fetching it from Square (a forged webhook can't
+// fake a COMPLETED payment on our account), then mark paid + dispatch.
+// Signature check is best-effort defense-in-depth on top of the re-fetch.
+app.post("/api/square-webhook", async (req, res) => {
+  try {
+    const settings = await store.getConfig("settings");
+    const cfg = square.squareConfig(settings);
+    const event = req.body || {};
+
+    // Optional signature verification (logged only; the re-fetch below is authoritative).
+    if (cfg.signatureKey) {
+      const notifyUrl = "https://" + (req.headers["x-forwarded-host"] || req.headers.host) + req.originalUrl;
+      const sigOk = square.verifySignature(cfg.signatureKey, notifyUrl, req.rawBody, req.headers["x-square-hmacsha256-signature"]);
+      if (!sigOk) console.warn("Square webhook signature mismatch (continuing with authoritative re-fetch)");
+    }
+
+    const obj = event.data && event.data.object;
+    const payment = obj && (obj.payment || obj);
+    const paymentId = payment && payment.id;
+    if (!paymentId) return res.json({ received: true });
+
+    // Authoritative: ask Square directly whether this payment is complete.
+    const confirmed = await square.getPayment(paymentId, settings);
+    if (!confirmed || confirmed.status !== "COMPLETED") return res.json({ received: true });
+
+    const squareOrderId = confirmed.order_id;
+    const orders = await store.listColl("orders");
+    const match = orders.find((o) => o.squareOrderId && o.squareOrderId === squareOrderId);
+    if (match && !match.paid) {
+      const amount = (confirmed.amount_money && confirmed.amount_money.amount != null) ? confirmed.amount_money.amount / 100 : (match.total || 0);
+      const updated = await store.updateColl("orders", match.id, { status: "paid", paid: true, amountPaid: amount, squarePaymentId: paymentId });
       if (updated) await fulfillPaidOrder(updated);   // email dispatch + customer, create Shipday delivery
     }
     res.json({ received: true });
@@ -290,24 +368,52 @@ app.patch("/api/admin/submissions/:id", async (req, res) => { const r = await st
 app.get("/api/admin/pricing", async (req, res) => res.json({ pricing: await store.getConfig("pricing") }));
 app.put("/api/admin/pricing", async (req, res) => res.json({ pricing: await store.setConfig("pricing", req.body || {}) }));
 
-// Settings (payment gateways / integrations / business) — secret key redacted on read
+// Strip every secret from a settings object, leaving "<field>Set" booleans so the
+// admin UI can show "stored ✓" without ever shipping the secret back to the browser.
+function redactSettings(s) {
+  const out = JSON.parse(JSON.stringify(s || {}));
+  if (out.payments) {
+    out.payments.stripeSecretKeySet = !!out.payments.stripeSecretKey || !!process.env.STRIPE_SECRET_KEY;
+    out.payments.envSecret = !!process.env.STRIPE_SECRET_KEY;
+    delete out.payments.stripeSecretKey;
+    if (out.payments.square) {
+      const sq = out.payments.square;
+      sq.accessTokenSet = !!sq.accessToken || !!process.env.SQUARE_ACCESS_TOKEN;
+      sq.webhookSignatureKeySet = !!sq.webhookSignatureKey || !!process.env.SQUARE_WEBHOOK_SIGNATURE_KEY;
+      delete sq.accessToken; delete sq.webhookSignatureKey;
+    }
+  }
+  if (out.integrations) {
+    out.integrations.shipdaySet = !!out.integrations.shipdayKey || !!process.env.SHIPDAY_API_KEY;
+    out.integrations.gmapsSet = !!out.integrations.gmapsKey || !!process.env.GOOGLE_MAPS_API_KEY;
+    delete out.integrations.shipdayKey; delete out.integrations.gmapsKey;
+  }
+  if (out.smtp) { out.smtp.passSet = !!out.smtp.pass || !!process.env.SMTP_PASS; delete out.smtp.pass; }
+  return out;
+}
+
+// Settings (payment gateways / integrations / business) — all secrets redacted on read
 app.get("/api/admin/settings", async (req, res) => {
-  const s = JSON.parse(JSON.stringify(await store.getConfig("settings")));
-  if (s.payments) { s.payments.stripeSecretKeySet = !!s.payments.stripeSecretKey || !!process.env.STRIPE_SECRET_KEY; delete s.payments.stripeSecretKey; }
-  s.payments && (s.payments.envSecret = !!process.env.STRIPE_SECRET_KEY);
-  if (s.smtp) { s.smtp.passSet = !!s.smtp.pass || !!process.env.SMTP_PASS; delete s.smtp.pass; }
-  res.json({ settings: s });
+  res.json({ settings: redactSettings(await store.getConfig("settings")) });
 });
 app.put("/api/admin/settings", async (req, res) => {
   const body = req.body || {};
-  // don't wipe a stored secret with an empty field
-  if (body.payments && (body.payments.stripeSecretKey === "" || body.payments.stripeSecretKey == null)) delete body.payments.stripeSecretKey;
-  if (body.smtp && (body.smtp.pass === "" || body.smtp.pass == null)) delete body.smtp.pass;
+  // Don't wipe a stored secret when the field is submitted blank (means "keep existing").
+  const blank = (v) => v === "" || v == null;
+  if (body.payments) {
+    if (blank(body.payments.stripeSecretKey)) delete body.payments.stripeSecretKey;
+    if (body.payments.square) {
+      if (blank(body.payments.square.accessToken)) delete body.payments.square.accessToken;
+      if (blank(body.payments.square.webhookSignatureKey)) delete body.payments.square.webhookSignatureKey;
+    }
+  }
+  if (body.integrations) {
+    if (blank(body.integrations.shipdayKey)) delete body.integrations.shipdayKey;
+    if (blank(body.integrations.gmapsKey)) delete body.integrations.gmapsKey;
+  }
+  if (body.smtp && blank(body.smtp.pass)) delete body.smtp.pass;
   const merged = await store.setConfig("settings", deepMerge(await store.getConfig("settings"), body));
-  const out = JSON.parse(JSON.stringify(merged));
-  if (out.payments) { out.payments.stripeSecretKeySet = !!out.payments.stripeSecretKey; delete out.payments.stripeSecretKey; }
-  if (out.smtp) { out.smtp.passSet = !!out.smtp.pass; delete out.smtp.pass; }
-  res.json({ settings: out });
+  res.json({ settings: redactSettings(merged) });
 });
 
 function deepMerge(a, b) {

@@ -8,8 +8,9 @@
    ========================================================================== */
 "use strict";
 
-async function createShipdayOrder(order) {
-  const key = process.env.SHIPDAY_API_KEY;
+async function createShipdayOrder(order, settings) {
+  // Key is env-first, then the admin dashboard (settings.integrations.shipdayKey).
+  const key = process.env.SHIPDAY_API_KEY || (settings && settings.integrations && settings.integrations.shipdayKey) || "";
   if (!key) return { created: false, reason: "shipday_not_configured" };
 
   const c = order.customer || {};
@@ -31,8 +32,8 @@ async function createShipdayOrder(order) {
     deliveryFee: 0,
     totalOrderCost: order.amountPaid != null ? order.amountPaid : order.total,
     paymentMethod: "credit_card",
-    creditCardType: "stripe",
-    creditCardId: order.stripePaymentId || undefined
+    creditCardType: order.paymentProvider || (order.squarePaymentId ? "square" : (order.stripePaymentId ? "stripe" : "card")),
+    creditCardId: order.squarePaymentId || order.stripePaymentId || undefined
   };
 
   try {
