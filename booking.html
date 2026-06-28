@@ -129,10 +129,10 @@
         <div id="routeBlock" style="display:none">
           <h3>4 · Route stops</h3>
           <div class="field-row">
-            <div class="field"><label>Number of stops</label><input id="bkStops" type="number" min="1" max="9" step="1" value="3"></div>
+            <div class="field"><label>Number of stops</label><input id="bkStops" type="number" min="1" max="30" step="1" value="3"></div>
             <div class="field"><label>Heaviest package across stops (lb)</label><input id="bkWeightRoute" type="number" min="0" max="200" step="1" value="20"></div>
           </div>
-          <div class="field"><label>Stop addresses</label><div class="stops-list" id="stopsList"></div><small class="field-hint">Distance is measured from the pickup to the farthest stop, automatically.</small></div>
+          <div class="field"><label>Stop addresses</label><div class="stops-list" id="stopsList"></div><small class="field-hint">Distance is measured from the pickup to the farthest stop, automatically. Under 9 stops is $39.99 per stop; at <b>9 stops or more</b> it becomes a route — $49.99 for the first stop, $19.99 for each additional.</small></div>
         </div>
 
         <!-- AUTO-CALCULATED DISTANCE (customer never types miles) -->
@@ -187,6 +187,7 @@
         <div class="field"><textarea id="bkNotes" placeholder="Gate code, fragile, leave at door, etc." style="min-height:90px"></textarea></div>
 
         <p style="margin-top:14px;font-size:1.1rem;font-weight:800;color:var(--ink)">*Deliveries outside of servicing area price may vary.</p>
+        <label class="chk" style="margin-top:10px"><input type="checkbox" id="bkOutOfArea"> Outside the service area (not Miami-Dade / Broward / Palm Beach) — $150 base + $1.50/mi beyond 60 mi</label>
         <label class="chk" style="margin-top:10px"><input type="checkbox" id="bkOversized"> Over 200 lb / appliance / furniture / oversized or special handling</label>
         <label class="chk" style="margin-top:8px"><input type="checkbox" id="bkRequestQuote"> I'd rather request a custom quote</label>
       </form>

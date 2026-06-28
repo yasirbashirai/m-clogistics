@@ -15,11 +15,14 @@ const DEFAULT_P = {
   maxWeight: 200,
   overageStartMiles: 60,
   overagePerMile: 1.5,
-  route: { base: 49.99, perStop: 19.0 },
+  // Route: only a "route" (discounted) at routeThreshold stops. Under it, every stop
+  // is smallStop ($39.99). At/over it, first stop base ($49.99) + each additional perStop ($19.99).
+  route: { base: 49.99, perStop: 19.99, smallStop: 39.99, routeThreshold: 9 },
   addons: { helper: 75, furnitureDolly: 5, standardDolly: 5, rush: 15, overnight: 35, weekend: 20 },
   addonLabels: { helper: "Helper", furnitureDolly: "Furniture dolly", standardDolly: "Standard dolly", rush: "Rush delivery", overnight: "Overnight delivery", weekend: "Weekend delivery" },
   foamWrapPerItem: 5,
-  outsideTriCountyMin: 89.99,
+  // Outside Miami-Dade/Broward/Palm Beach: flat base + mileage beyond 60 mi.
+  outsideTriCountyBase: 150,
   // Box truck is flat-rated (not weight-band priced): $250 one-way / $500 round trip,
   // for loads up to 300 lb within a 60-mile radius. Beyond 60 mi adds the mileage surcharge.
   boxTruck: {
@@ -67,11 +70,23 @@ function distanceLines(P, wc, miles) {
   return { lines, total: r2(total) };
 }
 
+// Tolerate both add-on config shapes: flat number ({helper:75}) or object ({amount,label}).
+function addonFee(P, k) { const v = P.addons && P.addons[k]; return (v && typeof v === "object") ? (Number(v.amount) || 0) : (Number(v) || 0); }
+function addonLabel(P, k) { const v = P.addons && P.addons[k]; if (v && typeof v === "object" && v.label != null) return v.label; return (P.addonLabels && P.addonLabels[k]) || k; }
+
+// Mileage surcharge beyond the included radius (every mile over overageStartMiles).
+function mileageLine(P, miles) {
+  const m = Math.max(0, Number(miles) || 0);
+  if (m <= P.overageStartMiles) return null;
+  const extra = Math.round(m - P.overageStartMiles);
+  return { label: `Mileage surcharge (${extra} mi × $${P.overagePerMile.toFixed(2)})`, amount: r2(extra * P.overagePerMile) };
+}
+
 function extraLines(P, order) {
   const a = order.addons || {};
   const out = [];
   ["helper", "furnitureDolly", "standardDolly", "rush", "overnight", "weekend"].forEach((k) => {
-    if (a[k]) out.push({ label: P.addonLabels[k] || k, amount: P.addons[k] });
+    if (a[k]) out.push({ label: addonLabel(P, k), amount: addonFee(P, k) });
   });
   const items = Math.max(0, parseInt(order.foamWrapItems, 10) || 0);
   if (items > 0) out.push({ label: `Foam wrap (${items} item${items > 1 ? "s" : ""} × $${P.foamWrapPerItem.toFixed(2)})`, amount: r2(items * P.foamWrapPerItem) });
@@ -121,34 +136,39 @@ function priceOrder(order, P) {
 
   const lines = [];
   let total = 0;
+  const outOfArea = !!order.outsideTriCounty;
+  const ooaBase = Number(P.outsideTriCountyBase) || 150;
 
   if (order.serviceType === "Route Delivery") {
     const heaviest = Number(order.weight) || 0;
     if (heaviest > P.maxWeight) return { custom: true, reason: `Any stop over ${P.maxWeight} lb requires a custom quote.` };
     const stops = Math.max(1, parseInt(order.numberOfStops, 10) || 1);
-    lines.push({ label: "Route base fee", amount: P.route.base }); total += P.route.base;
-    const stopsCost = r2(stops * P.route.perStop);
-    lines.push({ label: `Stops: ${stops} × $${P.route.perStop.toFixed(2)}`, amount: stopsCost }); total += stopsCost;
-    const far = Number(order.miles) || 0;
-    if (far > P.overageStartMiles) {
-      const extra = Math.round(far - P.overageStartMiles);
-      const over = r2(extra * P.overagePerMile);
-      lines.push({ label: `Mileage surcharge (${extra} mi × $${P.overagePerMile.toFixed(2)})`, amount: over }); total += over;
-    }
+    const threshold = P.route.routeThreshold || 9;
+    const isRoute = stops >= threshold;                       // a true (discounted) route at 9+ stops
+    const smallStop = Number(P.route.smallStop) || 39.99;
+    const addRate = isRoute ? (Number(P.route.perStop) || 19.99) : smallStop;
+    const startFee = outOfArea ? ooaBase : (isRoute ? P.route.base : smallStop);
+    lines.push({ label: outOfArea ? "Out-of-area base — first stop" : (isRoute ? "Route base — first stop" : "First stop"), amount: startFee });
+    total += startFee;
+    const additional = stops - 1;
+    if (additional > 0) { const addCost = r2(additional * addRate); lines.push({ label: `Additional stops: ${additional} × $${addRate.toFixed(2)}`, amount: addCost }); total += addCost; }
+    const ml = mileageLine(P, order.miles);
+    if (ml) { lines.push(ml); total += ml.amount; }
   } else {
     const wc = weightClassFor(P, order.weight);
     if (!wc) return { custom: true, reason: `Deliveries over ${P.maxWeight} lb require a custom quote.` };
-    const d = distanceLines(P, wc, Number(order.miles) || 0);
-    d.lines.forEach((l) => { lines.push(l); total += l.amount; });
+    if (outOfArea) {
+      // Outside the service area: flat $150 base + mileage beyond 60 mi (no weight bands).
+      lines.push({ label: "Out-of-area base (outside service area)", amount: ooaBase }); total += ooaBase;
+      const ml = mileageLine(P, order.miles);
+      if (ml) { lines.push(ml); total += ml.amount; }
+    } else {
+      const d = distanceLines(P, wc, Number(order.miles) || 0);
+      d.lines.forEach((l) => { lines.push(l); total += l.amount; });
+    }
   }
 
   extraLines(P, order).forEach((l) => { lines.push(l); total += l.amount; });
-
-  // Out-of-area minimum: deliveries outside the tri-county area start at a floor price.
-  if (order.outsideTriCounty) {
-    const min = P.outsideTriCountyMin != null ? P.outsideTriCountyMin : 89.99;
-    if (total < min) { lines.push({ label: "Out-of-area minimum (outside tri-county)", amount: r2(min - total) }); total = min; }
-  }
 
   return { custom: false, lines, total: r2(total) };
 }

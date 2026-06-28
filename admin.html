@@ -263,8 +263,15 @@
     var vehHtml=veh.map(function(v,i){ return fld(v.label+" — orders/day","p_cap_"+i,v.dailyCap); }).join("");
     m.innerHTML='<div class="adm-h"><h1>Services &amp; Pricing</h1></div>'+
       wcHtml+
-      '<div class="card2"><h3>Route Delivery</h3><div class="grid2" style="margin-top:12px">'+
-        fld("Base fee ($)","p_base",p.route.base)+fld("Per stop ($)","p_perstop",p.route.perStop)+'</div></div>'+
+      '<div class="card2"><h3>Route Delivery</h3>'+
+        '<p class="muted">Under the route threshold, every stop is the small-route rate. At/over it, the first stop is the base fee and each additional stop is the per-stop rate.</p>'+
+        '<div class="grid2" style="margin-top:12px">'+
+        fld("First stop / base fee ($)","p_base",p.route.base)+fld("Per stop, 9+ stops ($)","p_perstop",p.route.perStop)+'</div>'+
+        '<div class="grid2" style="margin-top:12px">'+
+        fld("Per stop, under threshold ($)","p_smallstop",p.route.smallStop!=null?p.route.smallStop:39.99)+fld("Route threshold (stops)","p_threshold",p.route.routeThreshold!=null?p.route.routeThreshold:9)+'</div></div>'+
+      (function(){ var bt=p.boxTruck||{}; return '<div class="card2"><h3>Box truck &amp; out-of-area</h3><div class="grid3" style="margin-top:12px">'+
+        fld("Box truck one-way ($)","p_bt_flat",bt.flatRate!=null?bt.flatRate:250)+fld("Box truck round trip ($)","p_bt_round",bt.roundTripRate!=null?bt.roundTripRate:500)+fld("Box truck max weight (lb)","p_bt_maxw",bt.maxWeight!=null?bt.maxWeight:300)+'</div>'+
+        '<div class="grid2" style="margin-top:12px">'+fld("Box truck included miles","p_bt_miles",bt.includedMiles!=null?bt.includedMiles:60)+fld("Out-of-area base ($)","p_ooa",p.outsideTriCountyBase!=null?p.outsideTriCountyBase:150)+'</div></div>'; })()+
       '<div class="card2"><h3>Mileage &amp; limits</h3><div class="grid3" style="margin-top:12px">'+
         fld("Overage starts after (mi)","p_overstart",p.overageStartMiles)+fld("Per extra mile ($)","p_permile",p.overagePerMile)+fld("Max weight for instant (lb)","p_maxw",p.maxWeight)+'</div>'+
         '<div class="grid2" style="margin-top:12px">'+fld("Dispatch lead time (min)","p_lead",p.dispatchLeadMinutes||30)+fld("Foam wrap ($/item)","p_foam",p.foamWrapPerItem||5)+'</div></div>'+
@@ -279,9 +286,14 @@
         return { maxWeight:wc.maxWeight, label:wc.label, tiers:tiers };
       });
       var vehicles=veh.map(function(v,i){ return { id:v.id, label:v.label, surcharge:v.surcharge||0, dailyCap:num("p_cap_"+i) }; });
-      var body={ bands:bands, weightClasses:classes, route:{ base:num("p_base"), perStop:num("p_perstop") },
+      var bt0=p.boxTruck||{};
+      var body={ bands:bands, weightClasses:classes,
+        route:{ base:num("p_base"), perStop:num("p_perstop"), smallStop:num("p_smallstop"), routeThreshold:num("p_threshold")||9 },
         overageStartMiles:num("p_overstart"), overagePerMile:num("p_permile"), maxWeight:num("p_maxw"),
         dispatchLeadMinutes:num("p_lead"), foamWrapPerItem:num("p_foam"),
+        outsideTriCountyBase:num("p_ooa"),
+        boxTruck:{ flatRate:num("p_bt_flat"), roundTripRate:num("p_bt_round"), maxWeight:num("p_bt_maxw"), includedMiles:num("p_bt_miles"),
+          label:bt0.label||"Box truck — pickup & drop-off (≤300 lb, within 60 mi)", roundTripLabel:bt0.roundTripLabel||"Box truck — round trip (≤300 lb, within 60 mi)" },
         addons:{ helper:num("p_helper"), furnitureDolly:num("p_furndolly"), standardDolly:num("p_stddolly"), rush:num("p_rush"), weekend:num("p_weekend"), overnight:num("p_overnight") },
         vehicles:vehicles };
       send("PUT","/api/admin/pricing",body).then(function(d){ state.pricing=d.pricing; toast("Pricing saved — live on the site"); });
@@ -319,6 +331,10 @@
         '<div class="field"><label>Shipday API key</label><input id="s_shipday" type="password" placeholder="'+(intg.shipdaySet?"•••••• stored":"Basic …")+'"></div>'+
         '<div class="field"><label>Google Maps API key</label><input id="s_gmaps" type="password" placeholder="'+(intg.gmapsSet?"•••••• stored":"AIza…")+'"></div>'+
         '</div>'+
+        '<div style="margin-top:10px;display:flex;align-items:center;gap:12px">'+
+          '<button class="btn btn--outline" id="shipdayTest" type="button">Test Shipday connection</button>'+
+          '<span id="shipdayStatus" class="muted">'+(intg.shipdaySet?"Key stored — click to verify it's accepted.":"No key set yet.")+'</span>'+
+        '</div>'+
         '<h4 style="margin-top:16px">✉️ Email notifications (SMTP)</h4>'+
         '<p class="muted">New bookings and contact/careers submissions are emailed to the dispatch addresses below. For Gmail, use an <b>App Password</b> (not your normal password).</p>'+
         '<div class="grid3" style="margin-top:6px">'+
@@ -336,7 +352,37 @@
         fld("Business name","b_name",biz.name)+fld("Phone 1","b_p1",biz.phone1)+fld("Phone 2","b_p2",biz.phone2)+fld("Email","b_email",biz.email)+fld("Address","b_addr",biz.address)+fld("Hours","b_hours",biz.hours)+'</div>'+
         '<div class="field" style="margin-top:6px"><label>Dispatch notification emails (comma separated)</label><input id="b_dispatch" value="'+esc((s.dispatchEmails||[]).join(", "))+'"></div>'+
       '</div>'+
+      '<div class="card2"><h3>🔐 Admin password</h3>'+
+        '<p class="muted">'+((s.security&&s.security.adminPasswordSet)?"A dashboard password is set. ":"")+'Set or change the password you use to sign in here. Minimum 6 characters. (The host master token always keeps working as a backup.)</p>'+
+        '<div class="grid2" style="margin-top:12px">'+
+          '<div class="field"><label>New password</label><input id="s_newpass" type="password" placeholder="New admin password"></div>'+
+          '<div class="field"><label>Confirm password</label><input id="s_newpass2" type="password" placeholder="Re-type new password"></div>'+
+        '</div>'+
+        '<button class="btn btn--outline" id="changePass" type="button" style="margin-top:6px">Change password</button>'+
+      '</div>'+
       '<button class="btn btn--primary" id="saveSettings">Save settings</button>';
+    // Shipday connection test
+    $("shipdayTest").addEventListener("click",function(){
+      var st=$("shipdayStatus"); st.textContent="Testing…"; st.style.color="";
+      get("/api/admin/shipday-test").then(function(d){
+        if(d.ok){ st.style.color="#0a7d2c"; st.textContent="✓ Connected — Shipday accepted the key ("+(d.source==="env"?"host env var":"dashboard")+")."; }
+        else if(d.reason==="no_key"){ st.style.color="var(--red)"; st.textContent="No Shipday key set (env or dashboard)."; }
+        else if(d.reason==="key_rejected"){ st.style.color="var(--red)"; st.textContent="✗ Key rejected by Shipday (HTTP "+d.status+"). Check the API key."; }
+        else { st.style.color="var(--red)"; st.textContent="✗ Could not verify ("+(d.reason||"error")+(d.status?" "+d.status:"")+")."; }
+      }).catch(function(e){ st.style.color="var(--red)"; st.textContent="✗ "+e.message; });
+    });
+    // Change admin password
+    $("changePass").addEventListener("click",function(){
+      var p1=val("s_newpass"), p2=val("s_newpass2");
+      if(p1.length<6){ toast("Password must be at least 6 characters"); return; }
+      if(p1!==p2){ toast("Passwords don't match"); return; }
+      var b=$("changePass"); b.disabled=true; b.textContent="Saving…";
+      send("PUT","/api/admin/password",{newPassword:p1}).then(function(){
+        cfg.token=p1; localStorage.setItem(LS,JSON.stringify(cfg)); // keep this session signed in with the new password
+        $("s_newpass").value=""; $("s_newpass2").value="";
+        toast("✓ Admin password changed — it's active now");
+      }).catch(function(e){ toast("⚠ "+e.message); }).then(function(){ b.disabled=false; b.textContent="Change password"; });
+    });
     $("saveSettings").addEventListener("click",function(){
       var body={ payments:{ provider:$("s_provider").value, mode:$("s_mode").value, stripePublishableKey:$("s_pub").value },
         integrations:{}, business:{ name:val("b_name"),phone1:val("b_p1"),phone2:val("b_p2"),email:val("b_email"),address:val("b_addr"),hours:val("b_hours") },

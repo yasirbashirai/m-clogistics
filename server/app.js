@@ -98,8 +98,18 @@ async function fulfillPaidOrder(order) {
   } catch (_) { /* shipday best-effort */ }
 }
 
-function requireAdmin(req, res, next) {
-  if (!process.env.ADMIN_TOKEN || req.headers["x-admin-token"] === process.env.ADMIN_TOKEN) return next();
+// Admin auth accepts EITHER the host env token (master key — can never be locked out)
+// OR a password the client set from the dashboard (settings.security.adminPassword).
+async function requireAdmin(req, res, next) {
+  try {
+    const token = req.headers["x-admin-token"];
+    if (process.env.ADMIN_TOKEN && token === process.env.ADMIN_TOKEN) return next();
+    const s = await store.getConfig("settings");
+    const stored = s && s.security && s.security.adminPassword;
+    if (stored && token && token === stored) return next();
+    // No auth configured anywhere (fresh/local dev) — allow so the dashboard is reachable.
+    if (!process.env.ADMIN_TOKEN && !stored) return next();
+  } catch (_) { /* fall through to 401 */ }
   res.status(401).json({ error: "unauthorized" });
 }
 async function stripeKey() {
@@ -389,6 +399,7 @@ function redactSettings(s) {
     delete out.integrations.shipdayKey; delete out.integrations.gmapsKey;
   }
   if (out.smtp) { out.smtp.passSet = !!out.smtp.pass || !!process.env.SMTP_PASS; delete out.smtp.pass; }
+  if (out.security) { out.security.adminPasswordSet = !!out.security.adminPassword; delete out.security.adminPassword; }
   return out;
 }
 
@@ -423,5 +434,22 @@ function deepMerge(a, b) {
   }
   return out;
 }
+
+// Change the admin dashboard password (the new value becomes a valid x-admin-token).
+// The host env ADMIN_TOKEN always keeps working as a master key, so the client can't
+// lock themselves (or you) out.
+app.put("/api/admin/password", async (req, res) => {
+  const np = String((req.body && req.body.newPassword) || "").trim();
+  if (np.length < 6) return res.status(400).json({ error: "password_too_short" });
+  const s = await store.getConfig("settings");
+  await store.setConfig("settings", { security: { ...((s && s.security) || {}), adminPassword: np } });
+  res.json({ ok: true });
+});
+
+// Verify the Shipday integration end-to-end (key present + accepted by Shipday).
+app.get("/api/admin/shipday-test", async (req, res) => {
+  const settings = await store.getConfig("settings");
+  res.json(await shipday.testConnection(settings));
+});
 
 module.exports = app;

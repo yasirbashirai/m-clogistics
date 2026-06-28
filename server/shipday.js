@@ -49,4 +49,20 @@ async function createShipdayOrder(order, settings) {
   }
 }
 
-module.exports = { createShipdayOrder };
+// Lightweight connectivity check for the admin dashboard: confirms a key is present
+// and that Shipday accepts it (GET /carriers — a read-only, side-effect-free call).
+async function testConnection(settings) {
+  const key = process.env.SHIPDAY_API_KEY || (settings && settings.integrations && settings.integrations.shipdayKey) || "";
+  const source = process.env.SHIPDAY_API_KEY ? "env" : (key ? "dashboard" : "none");
+  if (!key) return { ok: false, reason: "no_key", source };
+  try {
+    const r = await fetch("https://api.shipday.com/carriers", { headers: { Authorization: "Basic " + key } });
+    if (r.ok) return { ok: true, status: r.status, source };
+    if (r.status === 401 || r.status === 403) return { ok: false, reason: "key_rejected", status: r.status, source };
+    return { ok: false, reason: "unexpected_status", status: r.status, source };
+  } catch (e) {
+    return { ok: false, reason: "network_error", error: e.message, source };
+  }
+}
+
+module.exports = { createShipdayOrder, testConnection };

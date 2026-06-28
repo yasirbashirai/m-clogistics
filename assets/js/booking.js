@@ -33,11 +33,26 @@
       if (cfg.square) CFG.square = cfg.square;
       if (cfg.stripePublishableKey) CFG.stripePublishableKey = cfg.stripePublishableKey;
       // Sync displayed pricing with the dashboard (server still recomputes the charge).
+      // Deep-merge so server scalars (e.g. route.perStop) override while client-only
+      // nested keys (route.smallStop / routeThreshold, boxTruck.*) are preserved.
       if (cfg.pricing && typeof cfg.pricing === "object") {
-        try { Object.keys(cfg.pricing).forEach(function (k) { P[k] = cfg.pricing[k]; }); } catch (_) {}
+        try { deepAssign(P, cfg.pricing); } catch (_) {}
       }
     }).catch(function () { /* offline / not configured — stays in demo mode */ });
   })();
+
+  // Recursive object merge: src wins on scalars, nested objects merge key-by-key.
+  function deepAssign(target, src) {
+    Object.keys(src).forEach(function (k) {
+      var v = src[k];
+      if (v && typeof v === "object" && !Array.isArray(v) &&
+          target[k] && typeof target[k] === "object" && !Array.isArray(target[k])) {
+        deepAssign(target[k], v);
+      } else {
+        target[k] = v;
+      }
+    });
+  }
 
   var svc = "single";
   var miles = null;          // authoritative auto-distance (single drop-off / route farthest stop)
@@ -185,7 +200,7 @@
 
   /* ------------------------------------------------------ build stop fields */
   function buildStops() {
-    var n = Math.max(1, Math.min(9, parseInt($("bkStops").value, 10) || 1));
+    var n = Math.max(1, Math.min(30, parseInt($("bkStops").value, 10) || 1));
     var existing = {};
     stopsList.querySelectorAll("input").forEach(function (inp, i) { existing[i] = inp.value; });
     stopsList.innerHTML = "";
@@ -220,7 +235,7 @@
       vehicle: $("bkVehicle").value,
       roundTrip: $("bkRoundTrip").checked,
       oversized: $("bkOversized").checked,
-      outsideTriCounty: false, // out-of-area is handled manually — see the note on the form ("price may vary")
+      outsideTriCounty: !!($("bkOutOfArea") && $("bkOutOfArea").checked),
       requestQuote: $("bkRequestQuote").checked
     };
     if (svc === "route") {
@@ -334,7 +349,7 @@
       weight: svc === "single" ? (Number($("bkWeightSingle").value) || 0) : (Number($("bkWeightRoute").value) || 0),
       vehicle: $("bkVehicle").value,
       roundTrip: $("bkRoundTrip").checked,
-      outsideTriCounty: false, // out-of-area is handled manually — see the note on the form ("price may vary")
+      outsideTriCounty: !!($("bkOutOfArea") && $("bkOutOfArea").checked),
       requestedDate: effectiveDate(),
       date: timing === "scheduled" ? $("bkDate").value : "",
       time: timing === "scheduled" ? $("bkTime").value : "",
