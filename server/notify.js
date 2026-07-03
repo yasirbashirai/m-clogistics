@@ -70,7 +70,7 @@ async function notifyPaidOrder(order, dispatchEmails, smtp) {
   // 1) Dispatch / admin
   await t.sendMail({
     from,
-    to: (dispatchEmails && dispatchEmails.length ? dispatchEmails : ["dispatch@mclogistics.delivery", "mcdeliverypersonnel24.7@gmail.com"]).join(","),
+    to: (dispatchEmails && dispatchEmails.length ? dispatchEmails : ["dispatch@mclogistics.delivery", "info@mclogistics.delivery"]).join(","),
     subject: `New paid order ${order.id} — ${money(order.amountPaid != null ? order.amountPaid : order.total)}`,
     text: "A new order has been paid and is ready to dispatch.\n\n" + body
   });
@@ -111,7 +111,7 @@ async function notifyContact(sub, dispatchEmails, smtp) {
   await t.sendMail({
     from,
     replyTo: sub.email || undefined,
-    to: (dispatchEmails && dispatchEmails.length ? dispatchEmails : ["dispatch@mclogistics.delivery", "mcdeliverypersonnel24.7@gmail.com"]).join(","),
+    to: (dispatchEmails && dispatchEmails.length ? dispatchEmails : ["dispatch@mclogistics.delivery", "info@mclogistics.delivery"]).join(","),
     subject: `New ${kind}${sub.name ? " — " + sub.name : ""}`,
     text: body
   });
@@ -147,7 +147,7 @@ async function notifyQuoteRequest(order, dispatchEmails, smtp) {
   await t.sendMail({
     from,
     replyTo: c.email || undefined,
-    to: (dispatchEmails && dispatchEmails.length ? dispatchEmails : ["dispatch@mclogistics.delivery", "mcdeliverypersonnel24.7@gmail.com"]).join(","),
+    to: (dispatchEmails && dispatchEmails.length ? dispatchEmails : ["dispatch@mclogistics.delivery", "info@mclogistics.delivery"]).join(","),
     subject: `New custom-quote request${c.name ? " — " + c.name : ""}`,
     text: body
   });

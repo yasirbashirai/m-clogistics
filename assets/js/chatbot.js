@@ -9,7 +9,7 @@
   var BIZ = {
     phone1: "(954) 203-2335",
     phone2: "(954) 544-0359",
-    email: "mcdeliverypersonnel24.7@gmail.com",
+    email: "info@mclogistics.delivery",
     hours: "Mon–Fri 7:00 AM–7:00 PM · Sat 8:00 AM–4:00 PM · Sun by appointment",
     area: "Miami-Dade, Broward & Palm Beach County"
   };

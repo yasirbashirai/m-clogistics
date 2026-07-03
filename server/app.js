@@ -21,7 +21,7 @@ const r2 = (n) => Math.round((n + Number.EPSILON) * 100) / 100;
 
 // Every dispatch/submission email must reach these two no matter how the admin
 // edits the recipient list — the gmail inbox and the dispatch alias are always included.
-const CANONICAL_DISPATCH = ["dispatch@mclogistics.delivery", "mcdeliverypersonnel24.7@gmail.com"];
+const CANONICAL_DISPATCH = ["dispatch@mclogistics.delivery", "info@mclogistics.delivery"];
 function dispatchRecipients(settings) {
   const extra = (settings && Array.isArray(settings.dispatchEmails)) ? settings.dispatchEmails : [];
   const seen = new Set();

@@ -121,7 +121,7 @@ editable in the admin **Services & Pricing** tab).
 
 ### Email notifications
 On a paid order the webhook emails the **dispatch list** (`dispatch@mclogistics.delivery`,
-`mcdeliverypersonnel24.7@gmail.com`) and a confirmation to the customer (`server/notify.js`,
+`info@mclogistics.delivery`) and a confirmation to the customer (`server/notify.js`,
 via nodemailer). Configure `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASS`,
 `MAIL_FROM`. Until set, it no-ops cleanly.
 
@@ -196,7 +196,7 @@ area served, opening hours). A `sitemap.xml` and `robots.txt` are included.
 ## 📞 Business details
 
 - **Phone:** (954) 203-2335 · (954) 544-0359
-- **Email:** mcdeliverypersonnel24.7@gmail.com
+- **Email:** info@mclogistics.delivery
 - **Area:** North Lauderdale, FL 33068 — serving Miami-Dade, Broward & Palm Beach County
 
 ## 🎨 Brand

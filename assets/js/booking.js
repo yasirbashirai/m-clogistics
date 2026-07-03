@@ -38,6 +38,8 @@
       if (cfg.pricing && typeof cfg.pricing === "object") {
         try { deepAssign(P, cfg.pricing); } catch (_) {}
       }
+      // Grey out any vehicle the admin has marked unavailable.
+      try { syncVehicleAvailability(); } catch (_) {}
     }).catch(function () { /* offline / not configured — stays in demo mode */ });
   })();
 
@@ -290,6 +292,30 @@
       var cap = isBox && P.boxTruck ? P.boxTruck.maxWeight : 200;
       wEl.max = cap;
       if (Number(wEl.value) > cap) wEl.value = cap;
+    }
+  }
+  // Reflect admin-set vehicle availability in the dropdown: disable + grey out any
+  // vehicle marked unavailable (available === false). A missing flag means available.
+  function syncVehicleAvailability() {
+    var sel = $("bkVehicle");
+    if (!sel || !P.vehicles) return;
+    var firstAvail = null, selectedNowOff = false;
+    for (var i = 0; i < sel.options.length; i++) {
+      var o = sel.options[i];
+      var v = P.vehicles.find(function (x) { return x.id === o.value; });
+      var avail = !v || v.available !== false;
+      var base = o.getAttribute("data-label") || o.textContent.replace(/\s*—\s*unavailable$/i, "");
+      o.setAttribute("data-label", base);
+      o.disabled = !avail;
+      o.textContent = avail ? base : base + " — unavailable";
+      if (avail && firstAvail === null) firstAvail = o.value;
+      if (o.value === sel.value && !avail) selectedNowOff = true;
+    }
+    // If the currently selected vehicle just became unavailable, fall back to the
+    // first available one so the quote never sits on a blocked vehicle.
+    if (selectedNowOff && firstAvail !== null) {
+      sel.value = firstAvail;
+      setVehNote(); render();
     }
   }
   function checkAvailability() {

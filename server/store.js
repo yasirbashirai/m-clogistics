@@ -21,10 +21,10 @@ const DEFAULTS = {
   orders: [], quotes: [], submissions: [],
   settings: {
     business: { name: "M&C Logistics", phone1: "(954) 203-2335", phone2: "(954) 544-0359",
-      email: "mcdeliverypersonnel24.7@gmail.com", address: "North Lauderdale, FL 33068", hours: "Open 7 Days · 7AM–7PM" },
+      email: "info@mclogistics.delivery", address: "North Lauderdale, FL 33068", hours: "Open 7 Days · 7AM–7PM" },
     payments: { provider: "square", mode: "live", square: { applicationId: "", locationId: "", env: "production" }, stripePublishableKey: "" },
     integrations: { shipdayEnabled: false, googleMapsEnabled: false, smtpEnabled: false },
-    dispatchEmails: ["dispatch@mclogistics.delivery", "mcdeliverypersonnel24.7@gmail.com"]
+    dispatchEmails: ["dispatch@mclogistics.delivery", "info@mclogistics.delivery"]
   },
   pricing: {
     version: 2,
@@ -44,10 +44,10 @@ const DEFAULTS = {
       label: "Box truck — pickup & drop-off (≤300 lb, within 60 mi)",
       roundTripLabel: "Box truck — round trip (≤300 lb, within 60 mi)" },
     vehicles: [
-      { id: "car",          label: "Car",               surcharge: 0, dailyCap: 25 },
-      { id: "compact_van",  label: "Compact cargo van", surcharge: 0, dailyCap: 20 },
-      { id: "sprinter_van", label: "Sprinter van",      surcharge: 0, dailyCap: 25 },
-      { id: "box_truck",    label: "Box truck",         surcharge: 0, dailyCap: 10 }
+      { id: "car",          label: "Car",               surcharge: 0, dailyCap: 25, available: true },
+      { id: "compact_van",  label: "Compact cargo van", surcharge: 0, dailyCap: 20, available: true },
+      { id: "sprinter_van", label: "Sprinter van",      surcharge: 0, dailyCap: 25, available: true },
+      { id: "box_truck",    label: "Box truck",         surcharge: 0, dailyCap: 10, available: true }
     ],
     dispatchLeadMinutes: 30
   }

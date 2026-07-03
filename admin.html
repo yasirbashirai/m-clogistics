@@ -260,7 +260,11 @@
       return '<div class="card2"><h3>'+wc.label+' — distance tiers</h3><div style="margin-top:12px">'+rows+'</div></div>';
     }).join("");
     var veh=(p.vehicles||[]);
-    var vehHtml=veh.map(function(v,i){ return fld(v.label+" — orders/day","p_cap_"+i,v.dailyCap); }).join("");
+    var vehHtml=veh.map(function(v,i){
+      var on=(v.available!==false);
+      return '<div>'+fld(v.label+" — orders/day","p_cap_"+i,v.dailyCap)+
+        '<label class="chk" style="margin-top:6px"><input type="checkbox" id="p_avail_'+i+'"'+(on?' checked':'')+'> Available on booking form</label></div>';
+    }).join("");
     m.innerHTML='<div class="adm-h"><h1>Services &amp; Pricing</h1></div>'+
       wcHtml+
       '<div class="card2"><h3>Route Delivery</h3>'+
@@ -278,14 +282,14 @@
       '<div class="card2"><h3>Add-on fees</h3><div class="grid3" style="margin-top:12px">'+
         fld("Helper ($)","p_helper",p.addons.helper)+fld("Furniture dolly ($)","p_furndolly",p.addons.furnitureDolly)+fld("Standard dolly ($)","p_stddolly",p.addons.standardDolly)+'</div>'+
         '<div class="grid3" style="margin-top:12px">'+fld("Rush ($)","p_rush",p.addons.rush)+fld("Weekend ($)","p_weekend",p.addons.weekend)+fld("Overnight ($)","p_overnight",p.addons.overnight)+'</div></div>'+
-      '<div class="card2"><h3>Vehicle daily caps</h3><div class="grid3" style="margin-top:12px">'+vehHtml+'</div></div>'+
+      '<div class="card2"><h3>Vehicles — availability &amp; daily caps</h3><p class="muted">Uncheck a vehicle to grey it out on the booking form so customers can\'t select it. Re-check when it\'s back in service.</p><div class="grid3" style="margin-top:12px">'+vehHtml+'</div></div>'+
       '<button class="btn btn--primary" id="savePricing">Save pricing</button>';
     $("savePricing").addEventListener("click",function(){
       var classes=(p.weightClasses||[]).map(function(wc,ci){
         var tiers=bands.map(function(b,bi){ var el=m.querySelector('[data-wc="'+ci+'"][data-band="'+bi+'"]'); return Number(el&&el.value)||0; });
         return { maxWeight:wc.maxWeight, label:wc.label, tiers:tiers };
       });
-      var vehicles=veh.map(function(v,i){ return { id:v.id, label:v.label, surcharge:v.surcharge||0, dailyCap:num("p_cap_"+i) }; });
+      var vehicles=veh.map(function(v,i){ var a=$("p_avail_"+i); return { id:v.id, label:v.label, surcharge:v.surcharge||0, dailyCap:num("p_cap_"+i), available:a?a.checked:(v.available!==false) }; });
       var bt0=p.boxTruck||{};
       var body={ bands:bands, weightClasses:classes,
         route:{ base:num("p_base"), perStop:num("p_perstop"), smallStop:num("p_smallstop"), routeThreshold:num("p_threshold")||9 },

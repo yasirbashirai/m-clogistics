@@ -103,6 +103,9 @@ h1,h2,h3,h4 { font-family: var(--font-head); line-height: 1.15; font-weight: 800
 }
 .nav { display: flex; align-items: center; justify-content: space-between; height: 76px; }
 .logo { display: inline-flex; flex-direction: column; line-height: .9; }
+.logo__img { height: 58px; width: auto; display: block; }
+.header.scrolled .logo__img { height: 50px; transition: height var(--t); }
+.footer .logo__img { height: 66px; }
 .logo__main { font-family: var(--font-head); font-weight: 900; font-size: 1.7rem; letter-spacing: -.02em; }
 .logo__main b { color: var(--red); }
 .logo__sub { font-size: .62rem; font-weight: 700; letter-spacing: .34em; font-style: italic; color: var(--ink); margin-top: 2px; }
