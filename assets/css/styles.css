@@ -260,6 +260,8 @@ h1,h2,h3,h4 { font-family: var(--font-head); line-height: 1.15; font-weight: 800
 .footer__links a { font-size:.92rem; }
 .footer__links a:hover { color:#fff; }
 .footer__contact li { display:flex; gap:10px; font-size:.9rem; margin-bottom: 14px; align-items:flex-start; }
+.footer__emails { display:grid; gap:4px; min-width:0; }
+.footer__emails a { overflow-wrap:anywhere; }
 .footer__contact svg { width:16px; height:16px; flex:0 0 16px; margin-top:3px; color: var(--red); }
 .footer__socials { display:flex; gap:12px; margin-top: 18px; }
 .footer__socials a { width:38px; height:38px; border-radius:50%; background: rgba(255,255,255,.08); display:grid; place-items:center; transition: var(--t); }
@@ -333,8 +335,11 @@ h1,h2,h3,h4 { font-family: var(--font-head); line-height: 1.15; font-weight: 800
 .reveal.in { opacity:1; transform:none; }
 
 /* ---------- Responsive ---------- */
+/* Booking page: form + order-summary layout (collapses to one column on mobile) */
+.booking-grid { display:grid; grid-template-columns: 1.55fr 1fr; gap: 40px; align-items: start; }
+
 @media (max-width: 980px){
-  .hero__grid, .split, .area-grid, .contact-grid { grid-template-columns: 1fr; }
+  .hero__grid, .split, .area-grid, .contact-grid, .booking-grid { grid-template-columns: 1fr; }
   .hero__media, .split__media { order: -1; }
   .cards, .price-grid, .testi-grid { grid-template-columns: repeat(2,1fr); }
   .trust__grid, .stats__grid { grid-template-columns: repeat(2,1fr); }

@@ -10,7 +10,7 @@
     phone1: "(954) 203-2335",
     phone2: "(954) 544-0359",
     email: "info@mclogistics.delivery",
-    hours: "Mon–Fri 7:00 AM–7:00 PM · Sat 8:00 AM–4:00 PM · Sun by appointment",
+    hours: "Open 7 Days a Week · 7:00 AM–7:00 PM",
     area: "Miami-Dade, Broward & Palm Beach County"
   };
 
@@ -115,7 +115,7 @@
 
     if (/quote|price|cost|how much|estimate|rate/.test(q)) return startQuote();
     if (/book|order|schedule|delivery now|pickup/.test(q)) {
-      botSay("Great — you can book a sub-100 lb delivery in under a minute and pay online. 🚚<br><a href='booking.html' style='color:#E11D2A;font-weight:700'>Open the booking page →</a><br><br>Or call us and we'll set it up: <b>" + BIZ.phone1 + "</b>.");
+      botSay("Great — you can book a delivery up to 200 lb in under a minute and pay online. 🚚<br><a href='booking.html' style='color:#E11D2A;font-weight:700'>Open the booking page →</a><br><br>Or call us and we'll set it up: <b>" + BIZ.phone1 + "</b>.");
       setChips(DEFAULT_CHIPS); return;
     }
     if (/service|deliver|courier|what do you/.test(q)) {
