@@ -61,6 +61,7 @@
       { id: "sprinter_van", label: "Sprinter van",      surcharge: 0, dailyCap: 25 },
       { id: "box_truck",    label: "Box truck",         surcharge: 0, dailyCap: 10 }
     ],
+    surchargePercent: 6,       // % surcharge on the whole booking cost, shown as its own line
     dispatchLeadMinutes: 30,   // every order needs ≥30 min before a driver is dispatched
     gasPerGallon: 4.10         // assumption baked into the distance pricing model
   };
@@ -129,6 +130,14 @@
     return out;
   }
 
+  // Percentage surcharge on the whole booking cost — always the last line item.
+  // Kept in sync with server/pricing.js surchargeLine().
+  function surchargeLine(subtotal) {
+    var pct = Number(P.surchargePercent) || 0;
+    if (pct <= 0 || subtotal <= 0) return null;
+    return { label: "Surcharge (" + pct + "%)", amount: r2(subtotal * pct / 100) };
+  }
+
   // Mileage surcharge beyond the included radius (every mile over 60 × $1.50).
   function mileageLine(miles) {
     var m = Math.max(0, Number(miles) || 0);
@@ -161,6 +170,8 @@
       total += over;
     }
     extraLines(input).forEach(function (l) { lines.push(l); total += l.amount; });
+    var sc = surchargeLine(total);
+    if (sc) { lines.push(sc); total += sc.amount; }
     return { custom: false, service: "Box Truck", miles: miles, roundTrip: roundTrip, lines: lines, total: r2(total) };
   }
 
@@ -189,6 +200,9 @@
       d.lines.forEach(function (l) { lines.push(l); }); total += d.total;
     }
     extraLines(input).forEach(function (l) { lines.push(l); total += l.amount; });
+
+    var sc = surchargeLine(total);
+    if (sc) { lines.push(sc); total += sc.amount; }
 
     return { custom: false, service: "Single Delivery", weightClass: wc.label, miles: miles, outsideTriCounty: !!input.outsideTriCounty, lines: lines, total: r2(total) };
   }
@@ -231,6 +245,9 @@
     if (ml) { lines.push(ml); total += ml.amount; }
 
     extraLines(input).forEach(function (l) { lines.push(l); total += l.amount; });
+
+    var sc = surchargeLine(total);
+    if (sc) { lines.push(sc); total += sc.amount; }
 
     return { custom: false, service: "Route Delivery", stops: stops, isRoute: isRoute, farthestMiles: farthest, outsideTriCounty: !!input.outsideTriCounty, lines: lines, total: r2(total) };
   }

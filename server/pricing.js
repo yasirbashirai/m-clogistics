@@ -39,6 +39,8 @@ const DEFAULT_P = {
     { id: "sprinter_van", label: "Sprinter van",      surcharge: 0, dailyCap: 25 },
     { id: "box_truck",    label: "Box truck",         surcharge: 0, dailyCap: 10 }
   ],
+  // Percentage surcharge applied to the whole booking cost, shown as its own line.
+  surchargePercent: 6,
   dispatchLeadMinutes: 30
 };
 
@@ -73,6 +75,13 @@ function distanceLines(P, wc, miles) {
 // Tolerate both add-on config shapes: flat number ({helper:75}) or object ({amount,label}).
 function addonFee(P, k) { const v = P.addons && P.addons[k]; return (v && typeof v === "object") ? (Number(v.amount) || 0) : (Number(v) || 0); }
 function addonLabel(P, k) { const v = P.addons && P.addons[k]; if (v && typeof v === "object" && v.label != null) return v.label; return (P.addonLabels && P.addonLabels[k]) || k; }
+
+// Percentage surcharge on the whole booking cost — always the last line item.
+function surchargeLine(P, subtotal) {
+  const pct = Number(P.surchargePercent) || 0;
+  if (pct <= 0 || subtotal <= 0) return null;
+  return { label: `Surcharge (${pct}%)`, amount: r2(subtotal * pct / 100) };
+}
 
 // Mileage surcharge beyond the included radius (every mile over overageStartMiles).
 function mileageLine(P, miles) {
@@ -118,6 +127,8 @@ function boxTruckQuote(order, P) {
   }
 
   extraLines(P, order).forEach((l) => { lines.push(l); total += l.amount; });
+  const sc = surchargeLine(P, total);
+  if (sc) { lines.push(sc); total += sc.amount; }
   return { custom: false, lines, total: r2(total) };
 }
 
@@ -169,6 +180,9 @@ function priceOrder(order, P) {
   }
 
   extraLines(P, order).forEach((l) => { lines.push(l); total += l.amount; });
+
+  const sc = surchargeLine(P, total);
+  if (sc) { lines.push(sc); total += sc.amount; }
 
   return { custom: false, lines, total: r2(total) };
 }

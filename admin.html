@@ -278,7 +278,7 @@
         '<div class="grid2" style="margin-top:12px">'+fld("Box truck included miles","p_bt_miles",bt.includedMiles!=null?bt.includedMiles:60)+fld("Out-of-area base ($)","p_ooa",p.outsideTriCountyBase!=null?p.outsideTriCountyBase:150)+'</div></div>'; })()+
       '<div class="card2"><h3>Mileage &amp; limits</h3><div class="grid3" style="margin-top:12px">'+
         fld("Overage starts after (mi)","p_overstart",p.overageStartMiles)+fld("Per extra mile ($)","p_permile",p.overagePerMile)+fld("Max weight for instant (lb)","p_maxw",p.maxWeight)+'</div>'+
-        '<div class="grid2" style="margin-top:12px">'+fld("Dispatch lead time (min)","p_lead",p.dispatchLeadMinutes||30)+fld("Foam wrap ($/item)","p_foam",p.foamWrapPerItem||5)+'</div></div>'+
+        '<div class="grid3" style="margin-top:12px">'+fld("Dispatch lead time (min)","p_lead",p.dispatchLeadMinutes||30)+fld("Foam wrap ($/item)","p_foam",p.foamWrapPerItem||5)+fld("Surcharge (% of booking cost)","p_surcharge",p.surchargePercent!=null?p.surchargePercent:6)+'</div></div>'+
       '<div class="card2"><h3>Add-on fees</h3><div class="grid3" style="margin-top:12px">'+
         fld("Helper ($)","p_helper",p.addons.helper)+fld("Furniture dolly ($)","p_furndolly",p.addons.furnitureDolly)+fld("Standard dolly ($)","p_stddolly",p.addons.standardDolly)+'</div>'+
         '<div class="grid3" style="margin-top:12px">'+fld("Rush ($)","p_rush",p.addons.rush)+fld("Weekend ($)","p_weekend",p.addons.weekend)+fld("Overnight ($)","p_overnight",p.addons.overnight)+'</div></div>'+
@@ -295,6 +295,7 @@
         route:{ base:num("p_base"), perStop:num("p_perstop"), smallStop:num("p_smallstop"), routeThreshold:num("p_threshold")||9 },
         overageStartMiles:num("p_overstart"), overagePerMile:num("p_permile"), maxWeight:num("p_maxw"),
         dispatchLeadMinutes:num("p_lead"), foamWrapPerItem:num("p_foam"),
+        surchargePercent:num("p_surcharge"),
         outsideTriCountyBase:num("p_ooa"),
         boxTruck:{ flatRate:num("p_bt_flat"), roundTripRate:num("p_bt_round"), maxWeight:num("p_bt_maxw"), includedMiles:num("p_bt_miles"),
           label:bt0.label||"Box truck — pickup & drop-off (≤300 lb, within 60 mi)", roundTripLabel:bt0.roundTripLabel||"Box truck — round trip (≤300 lb, within 60 mi)" },
